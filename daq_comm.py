@@ -6,7 +6,7 @@ import time
 import config
 import matplotlib.pyplot as plt
 
-from PyQt5.QtCore import QThread, pyqtSignal, QTimer
+from PyQt5.QtCore import QThread, pyqtSignal, QTimer, QObject
 
 cmd_write = 0xFF
 cmd_read  = 0x00
@@ -36,7 +36,7 @@ status_bits = ["spi_master_busy       ",
         "plllck                "]
 
 
-class DaqComm(QThread):
+class DaqComm(QObject):
     error_sig= pyqtSignal(str)
     info_sig= pyqtSignal(str)
     warning_sig= pyqtSignal(str)
