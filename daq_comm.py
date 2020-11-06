@@ -135,7 +135,7 @@ class DaqComm(QObject):
         if value:
             self.info("register: %s read = %s" %(hex(addr_status), hex(value)))
             for bit in range(16):
-                self.info(f'\t{ status_bits[bit]}:{((value >> bit) & 1) == 1}')
+                self.info(f'\t{status_bits[bit]}:{((value >> bit) & 1) == 1}')
             return
         self.info(f"status for {addr_status}: None")
 

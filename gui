@@ -17,11 +17,83 @@ from datetime import datetime
 import numpy as np
 
 from PyQt5 import  QtWidgets, QtCore, QtGui
-from PyQt5.QtCore import QThread, pyqtSignal, QTimer
+from PyQt5.QtCore import QThread, pyqtSignal, QTimer, QObject, QRunnable, QThreadPool
 from PyQt5.QtChart import QChart, QChartView, QLineSeries, QValueAxis
 from PyQt5.QtChart  import QBarSeries, QBarSet, QScatterSeries
 import window
 import daq_comm 
+
+import time
+import traceback, sys
+
+
+class WorkerSignals(QObject):
+    '''
+    Defines the signals available from a running worker thread.
+
+    Supported signals are:
+
+    finished
+        No data
+    
+    error
+        `tuple` (exctype, value, traceback.format_exc() )
+    
+    result
+        `object` data returned from processing, anything
+
+    progress
+        `int` indicating % progress 
+
+    '''
+    finished = pyqtSignal()
+    error = pyqtSignal(str)
+    result = pyqtSignal(object)
+    #progress = pyqtSignal(int)
+
+
+class Worker(QRunnable):
+    '''
+    Worker thread
+
+    Inherits from QRunnable to handler worker thread setup, signals and wrap-up.
+
+    :param callback: The function callback to run on this worker thread. Supplied args and 
+                     kwargs will be passed through to the runner.
+    :type callback: function
+    :param args: Arguments to pass to the callback function
+    :param kwargs: Keywords to pass to the callback function
+
+    '''
+
+    def __init__(self, fn, *args, **kwargs):
+        super(Worker, self).__init__()
+
+        # Store constructor arguments (re-used for processing)
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+        self.signals = WorkerSignals()    
+
+        # Add the callback to our kwargs
+        #self.kwargs['progress_callback'] = self.signals.progress        
+
+    def run(self):
+        '''
+        Initialise the runner function with passed args, kwargs.
+        '''
+        
+        # Retrieve args/kwargs here; and fire processing using them
+        try:
+            result = self.fn(*self.args, **self.kwargs)
+        except:
+            traceback.print_exc()
+            exctype, value = sys.exc_info()[:2]
+            self.signals.error.emit((exctype, value, traceback.format_exc()))
+        else:
+            self.signals.result.emit(result)  # Return the result of the processing
+        finally:
+            self.signals.finished.emit()  # Done
 
 
 class Ui(window.Ui_MainWindow):
@@ -55,9 +127,12 @@ class Ui(window.Ui_MainWindow):
             'info': self.info,
             'warning': self.warning,
             'error': self.error,
+            'result': self.handle_result,
+            #'progress': self.progress
         }
         self.comm.connect_signal_slots(slots)
         self.set_button_status(1, False)
+        self.threadpool = QThreadPool()
     
     def set_button_status(self, level, status):
         button_groups={
@@ -72,8 +147,25 @@ class Ui(window.Ui_MainWindow):
             for btn in button_groups[1]:
                 btn.setEnabled(status)
 
+    def async_run(self, func, *args, **kwargs):
+        worker = Worker(func) # Any other args, kwargs are passed to the run function
+        worker.signals.result.connect(self.handle_result)
+        worker.signals.finished.connect(self.handle_finished)
+        worker.signals.error.connect(self.error)
+        self.threadpool.start(worker)
 
 
+    def handle_finished(self):
+        pass
+    def handle_result(self, data):
+        print(data)
+        if isinstance(data,dict):
+            if 'error'  in data:
+                self.error(data['error'])
+            if 'info'  in data:
+                self.info(data['info'])
+            if 'warning'  in data:
+                self.info(data['warning'])
 
 
     def error(self,msg, where=1):
@@ -101,8 +193,10 @@ class Ui(window.Ui_MainWindow):
         res=self.comm.get_temperatures()
         for msg in res: 
             self.info(msg)
-
     def connect_host(self):
+        self.async_run(self._connect_host)
+
+    def _connect_host(self):
         if  not self.is_connected:
             address=self.ipAddressInput.text()
             port=int(self.portInput.text())
@@ -133,7 +227,10 @@ class Ui(window.Ui_MainWindow):
     def select_folder(self):
         self.current_folder= str(QtWidgets.QFileDialog.getExistingDirectory())
         self.folderLabel.setText(self.current_folder)
+
     def init_board(self):
+        self.async_run(self._init_board)
+    def _init_board(self):
         self.info('Initializing hardware ...', 0)
         if self.comm.init_daq():
             self.info('board initialized',0)
@@ -144,8 +241,8 @@ class Ui(window.Ui_MainWindow):
 
     def read_status(self):
         self.info('Reading ...', 0)
-        msg=self.comm.status()
-        self.info(msg)
+        self.async_run(self.comm.status())
+        #self.info(msg)
 
     def last_command(self):
         reg=0x52
@@ -191,6 +288,7 @@ def main():
     MainWindow = QtWidgets.QMainWindow()
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     window = Ui(MainWindow)
+    print('gui_callback')
     MainWindow.show()
     #if filename:
     #    #window.openFile(filename)
