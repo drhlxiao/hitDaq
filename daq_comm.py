@@ -36,44 +36,13 @@ status_bits = ["spi_master_busy       ",
         "plllck                "]
 
 
-
-class HitThread(QThread):
-    """ Runs a function in a thread, and alerts the parent when done. 
-
-    Uses a custom QEvent to alert the main thread of completion.
-
-    """
-    signal= pyqtSignal(object)
-
-    def __init__(self, func, slot, *args, **kwargs):
-        super(HitThread, self).__init__()
-        self.signal.connect(slot)
-        self.func = func
-        self.args = args
-        self.kwargs = kwargs
-        self.start()
-
-    def run(self):
-        try:
-            result = self.func(*self.args, **self.kwargs)
-            self.signal.emit(result)
-        except Exception as e:
-            print("e is %s" % e)
-            result = e
-
-
-gui_callback=None
-def async(func):
-    def wrapper(*args, **kwargs):
-        HitThread(func, gui_callback, *args, **kwargs)
-    return wrapper
-
-
-class DaqComm():
+class DaqComm(QThread):
+    error_sig= pyqtSignal(str)
+    info_sig= pyqtSignal(str)
+    warning_sig= pyqtSignal(str)
 
     def __init__(self):
-        #super(DaqComm, self).__init__()
-        
+        super(DaqComm, self).__init__()
         self.address = '10.42.0.130'
         self.port = 1002
         self.server_address = None
@@ -91,23 +60,21 @@ class DaqComm():
             return True
         except Exception as e:
             self.error(str(e))
-        return Fals#e
+        return False
     def close_all(self):
         self.s.close()
     def error(self,msg):
-        return {'error':msg}
-        
+        self.error_sig.emit(msg)
     def info(self,msg):
-        return {'info':msg}
-        #self.info_sig.emit(msg)
+        self.info_sig.emit(msg)
     def warn(self,msg):
-        return {'warn':msg}
-        #self.warning_sig.emit(msg)
-    def data(self, data):
-        return {'data':data}
+        self.warning_sig.emit(msg)
 
+    def connect_signal_slots(self, slots):
+        self.error_sig.connect(slots['error'])
+        self.info_sig.connect(slots['info'])
+        self.warning_sig.connect(slots['warning'])
 
-    @async
     def read(self,register):  
         a = (cmd_read & 0xF0) + ((register >> 4) & 0x0F)
         b = ((register << 4) & 0xF0) + (cmd_read & 0x0F)
@@ -121,12 +88,11 @@ class DaqComm():
                 data[amount_received] = self.s.recv(1)
                 amount_received += 1
             value = int.from_bytes(data[4], byteorder='big') * 256 + int.from_bytes(data[5], byteorder='big')
-            return self.data(str(e))
+            return value
         except Exception as e:
-            return self.error(str(e))
-        return self.data(None)
+            self.error(str(e))
+        return None
 
-    @async
     def read_burst(self, register):  
         a = (cmd_read & 0xF0) + ((register >> 4) & 0x0F)
         b = ((register << 4) & 0xF0) + (cmd_read & 0x0F)
@@ -148,10 +114,10 @@ class DaqComm():
             for word in range(burst_length):
                 value.append( int.from_bytes(data[4+(word*2)], byteorder='big') * 256 + int.from_bytes(data[5+(word*2)], byteorder='big') )
               #print("Word %s = %s" %(word, hex(value[word])))
-            return {'data':value}
+            return value
         except Exception as e:
-            return {'error':e}
-        return {'data':None}
+            self.error(str(e))
+        return None
 
     def read_samples(self,event, channel):
         address = ((event & 0x1FF) << 13) + ((channel & 0x07) << 10)
@@ -169,8 +135,8 @@ class DaqComm():
         if value:
             self.info("register: %s read = %s" %(hex(addr_status), hex(value)))
             for bit in range(16):
-                
-            return self.info(f'\t{ status_bits[bit]}:{((value >> bit) & 1) == 1}')
+                self.info(f'\t{ status_bits[bit]}:{((value >> bit) & 1) == 1}')
+            return
         self.info(f"status for {addr_status}: None")
 
 

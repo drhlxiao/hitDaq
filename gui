@@ -24,6 +24,37 @@ import window
 import daq_comm 
 
 
+class HitThread(QThread):
+    """ Runs a function in a thread, and alerts the parent when done. 
+
+    Uses a custom QEvent to alert the main thread of completion.
+
+    """
+    signal= pyqtSignal(object)
+
+    def __init__(self, func, slot, *args, **kwargs):
+        super(HitThread, self).__init__()
+        self.signal.connect(slot)
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+        self.start()
+
+    def run(self):
+        try:
+            result = self.func(*self.args, **self.kwargs)
+            self.signal.emit(result)
+        except Exception as e:
+            print("e is %s" % e)
+            result = e
+
+
+gui_callback=None
+def async(func):
+    def wrapper(*args, **kwargs):
+        HitThread(func, gui_callback, *args, **kwargs)
+    return wrapper
+
 class Ui(window.Ui_MainWindow):
     def __init__(self, MainWindow):
         super(Ui, self).setupUi(MainWindow)
@@ -103,6 +134,7 @@ class Ui(window.Ui_MainWindow):
         for msg in res: 
             self.info(msg)
 
+    @async
     def connect_host(self):
         if  not self.is_connected:
             address=self.ipAddressInput.text()
@@ -134,6 +166,7 @@ class Ui(window.Ui_MainWindow):
     def select_folder(self):
         self.current_folder= str(QtWidgets.QFileDialog.getExistingDirectory())
         self.folderLabel.setText(self.current_folder)
+    @async
     def init_board(self):
         self.info('Initializing hardware ...', 0)
         if self.comm.init_daq():
