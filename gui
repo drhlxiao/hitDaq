@@ -1,0 +1,202 @@
+#!/usr/bin/python
+# -*- encoding: utf-8 -*-
+
+import os
+import sys
+import pickle
+import time
+import gzip
+import binascii
+import struct
+import pprint
+import socket
+import signal
+import webbrowser
+from functools import partial
+from datetime import datetime
+import numpy as np
+
+from PyQt5 import  QtWidgets, QtCore, QtGui
+from PyQt5.QtCore import QThread, pyqtSignal, QTimer
+from PyQt5.QtChart import QChart, QChartView, QLineSeries, QValueAxis
+from PyQt5.QtChart  import QBarSeries, QBarSet, QScatterSeries
+import window
+import daq_comm 
+
+
+class Ui(window.Ui_MainWindow):
+    def __init__(self, MainWindow):
+        super(Ui, self).setupUi(MainWindow)
+        self.MainWindow = MainWindow
+        self.current_folder='.'
+        self.is_connected=False
+        button_connections={
+                self.connectBtn: self.connect_host,
+                self.selectFolderBtn: self.select_folder,
+                self.initBtn:self.init_board,
+                self.readStatBtn:self.read_status,
+                self.lastCmdBtn:self.last_command,
+                self.hkSingleReadBtn:self.single_read,
+                self.hkStartBtn: self.hk_acq_start,
+                self.sciStartDRSBtn:self.sci_acq_start,
+                self.sciStopDRSBtn:self.sci_acq_stop,
+                self.sciTrigDRSBtn:self.sci_single_trigger,
+                self.sciSingReadBtn:self.sci_single_read,
+                self.calStartBtn:self.calibration_start,
+                self.calStopBtn:self.calibration_stop,
+                self.tempReadBtn:self.read_temperature
+                }
+        for btn, fun in button_connections.items():
+            btn.clicked.connect(fun)
+        #init slots
+        self.comm=daq_comm.DaqComm()
+
+
+        self.comm.gui_callback=self.daq_com_callback
+
+
+        self.set_button_status(1, False)
+    
+    def set_button_status(self, level, status):
+        button_groups={
+                0: [self.initBtn,  self.readStatBtn, self.lastCmdBtn, self.tempReadBtn],
+                1: [self.hkSingleReadBtn, self.hkStartBtn, self.sciSingReadBtn, 
+                    self.sciStartDRSBtn, self.sciStopDRSBtn,
+                    self.sciTrigDRSBtn, self.calStopBtn, self.calStartBtn]}
+        if level>=0:
+            for btn in button_groups[0]:
+                btn.setEnabled(status)
+        if level>=1:
+            for btn in button_groups[1]:
+                btn.setEnabled(status)
+
+
+
+    def daq_com_callback(self, data):
+        print('emitted signal:')
+        print(data)
+
+
+    def error(self,msg, where=1):
+        self.show_message(msg,where, 'red')
+    def info(self,msg,where=1, timestamp=True):
+        self.show_message(msg,where,'dakGray', timestamp)
+    def warning(self,msg,where=1):
+        self.show_message(msg,where,'yellow')
+
+    def show_message(self, msg, where=0, color='darkGray', timestamp=True):
+        if where != 1:
+            self.statusbar.showMessage(msg)
+        if where != 0:
+            if timestamp:
+                msg=f'[{datetime.now().isoformat()}] {msg}'
+            item = QtWidgets.QListWidgetItem(msg)
+            item.setForeground(QtGui.QColor(color))
+            self.listWidget.addItem(item)
+        
+    def close(self):
+        self.MainWindow.close()
+    def style(self):
+        return self.MainWindow.style()
+    def read_temperature(self):
+        res=self.comm.get_temperatures()
+        for msg in res: 
+            self.info(msg)
+
+    def connect_host(self):
+        if  not self.is_connected:
+            address=self.ipAddressInput.text()
+            port=int(self.portInput.text())
+            self.info(f'Connecting host {address} port {port}...')
+
+            if self.comm.connect_host(address,port):
+                self.is_connected=True
+                self.info('Connected.')
+                self.connectBtn.setText('Disconnect')
+                self.portInput.setEnabled(False)
+                self.ipAddressInput.setEnabled(False)
+                self.connectBtn.setStyleSheet("background-color: green; color:white;")
+                self.set_button_status(0, True)
+            else:
+                self.error('Connection failed!')
+            return
+        self.comm.close_all()
+        self.info('Disconnected!')
+        self.connectBtn.setText('Connect')
+        self.portInput.setEnabled(True)
+        self.ipAddressInput.setEnabled(True)
+        self.is_connected=False
+        self.connectBtn.setStyleSheet("background-color: #e7e7e7")
+        self.set_button_status(1,False)
+        
+
+
+    def select_folder(self):
+        self.current_folder= str(QtWidgets.QFileDialog.getExistingDirectory())
+        self.folderLabel.setText(self.current_folder)
+    def init_board(self):
+        self.info('Initializing hardware ...', 0)
+        if self.comm.init_daq():
+            self.info('board initialized',0)
+            self.set_button_status(1,True)
+        else:
+            self.error('Failed to initialized hardware',0)
+
+
+    def read_status(self):
+        self.info('Reading ...', 0)
+        msg=self.comm.status()
+        self.info(msg)
+
+    def last_command(self):
+        reg=0x52
+        res=self.comm.read_register(reg)
+        if res:
+            msg="register: %s read = %s" %(hex(reg), hex(res))  
+            self.info(msg)
+        else:
+            self.info('Return value is None')
+
+    def single_read(self):
+        self.info('Read single event...', 0)
+        pass
+    def hk_acq_start(self):
+        self.info('Starting hk read...', 0)
+        pass
+    def sci_acq_start(self):
+        self.info('Acq starting...', 0)
+        pass
+    def sci_acq_stop(self):
+        self.info('Stopping acquisition...', 0)
+        pass
+    def sci_single_trigger(self):
+        self.info('single ...', 0)
+        pass
+    def sci_single_read(self):
+        self.info('single read ...', 0)
+        pass
+    def calibration_start(self):
+        self.info('Starting calibration...', 0)
+        pass
+    def calibration_stop(self):
+        self.info('Stopping calibration...', 0)
+        pass
+
+
+
+def main():
+    filename = None
+    if len(sys.argv) >= 2:
+        filename = sys.argv[1]
+    app = QtWidgets.QApplication(sys.argv)
+    MainWindow = QtWidgets.QMainWindow()
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    window = Ui(MainWindow)
+    MainWindow.show()
+    #if filename:
+    #    #window.openFile(filename)
+    sys.exit(app.exec_())
+
+
+if __name__ == '__main__':
+    main()

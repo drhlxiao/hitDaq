@@ -1,0 +1,18 @@
+<RCC>
+  <qresource prefix="/Icons">
+    <file>images/console.svg</file>
+    <file>images/binary.svg</file>
+    <file>images/filter.svg</file>
+    <file>images/plugin.svg</file>
+    <file>images/paste.svg</file>
+    <file>images/fileopen.png</file>
+    <file>images/folder.svg</file>
+    <file>images/graph.svg</file>
+    <file>images/app.svg</file>
+    <file>images/socket.svg</file>
+    <file>images/mongodb.svg</file>
+    <file>images/copy.svg</file>
+    <file>images/link.svg</file>
+    <file>images/datetime.svg</file>
+  </qresource>
+</RCC>
