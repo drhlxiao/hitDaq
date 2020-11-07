@@ -51,9 +51,9 @@ commands = {
 
                 'sequence': [
                     ('get_register', 0x21,
-                     "Reading the temperature from I2C device 0x90", 'comm._decode_temp'),
+                     "Reading the temperature from I2C device 0x90", '_decode_temp'),
                     ('get_register', 0x22,
-                     "Reading the temperature from I2C device 0x92", 'comm._decode_temp'),
+                     "Reading the temperature from I2C device 0x92", '_decode_temp'), #callback
                 ],
             },
             {
@@ -62,7 +62,7 @@ commands = {
                 'type': 'inline',
                 'inputs': None,
                 'sequence': [
-                    ('get_register', 0x02, "Reading the status", 'comm.decode_status'),
+                    ('get_register', 0x02, "Reading the status", 'decode_status'),
                 ],
             },
             {

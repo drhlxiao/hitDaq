@@ -243,10 +243,12 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             if value:
                 self.info(f'Result raw value: {value}',color='darkCyan')
                 if len(seq)==4:
-                    callback=seq[3]
-                    method = getattr(self, 'comm.status')
-                    print('mode')
-                    print(method)
+                    callback_name=seq[3]
+                    callback= getattr(self, callback_name)
+                    result=callback(seq[1], value)
+                    if result:
+                        self.info(f'Eng. value: {result}',color='darkCyan')
+
 
 
         def _sequence_write(seq):
