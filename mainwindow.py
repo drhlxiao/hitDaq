@@ -87,7 +87,7 @@ class Ui(window.Ui_MainWindow):
         super(Ui, self).setupUi(MainWindow)
         self.MainWindow = MainWindow
         self.current_folder='.'
-        self.extra_layouts=[]
+        self.dynamic_layouts=[]
         self.is_connected=False
         button_connections={
                 self.connectBtn: self.connect_host,
@@ -126,8 +126,8 @@ class Ui(window.Ui_MainWindow):
         if level>=0:
             for btn in button_groups[0]:
                 btn.setEnabled(status)
-            for extra_btn in self.extra_buttons.values():
-                extra_btn.setEnabled(status)
+            for dynamic_btn in self.dynamic_widgets.values():
+                dynamic_btn.setEnabled(status)
         if level>=1:
             for btn in button_groups[1]:
                 btn.setEnabled(status)
@@ -142,16 +142,15 @@ class Ui(window.Ui_MainWindow):
         self.threadpool.start(worker)
 
     def create_commands(self):
-        self.add_command_to_group('basicOperationGroup')
-        self.add_command_to_group('readoutsGroup')
-    def add_command_to_group(self, group_name):
+        self.add_command_to_group('basicOperationGroup', row_cols=5)
+        self.add_command_to_group('readoutsGroup', row_cols=4)
+    def add_command_to_group(self, group_name, row_cols):
         group=self.MainWindow.findChild(QtWidgets.QGroupBox,group_name)
         grid= QtWidgets.QGridLayout(group)
-        self.extra_layouts.append(grid)
+        self.dynamic_layouts.append(grid)
         commands=config.commands[group_name]
         rowspan=1
         colspan=1
-        row_cols=4
         row=0
         col=0
         for item in commands:
@@ -170,14 +169,25 @@ class Ui(window.Ui_MainWindow):
 
                     for sub_item in inputs:
                         with_inputs=True
+
                         edit= QtWidgets.QSpinBox(group)
-                        edit.setValue(sub_item['default'])
                         edit.setObjectName(sub_item['name'])
+                        if 'tooltip' in sub_item:
+                            edit.setToolTip(sub_item['tooltip'])
+                            edit.setStatusTip(sub_item['tooltip'])
+                        if 'max' in sub_item:
+                            edit.setMaximum(sub_item['max'])
+                        if 'min' in sub_item:
+                            edit.setMinimum(sub_item['min'])
+                        if 'default' in sub_item:
+                            edit.setValue(sub_item['default'])
+                            print(sub_item['default'])
+
                         #row=index//row_cols
                         #col=index%row_cols
 
                         print(row,col)
-                        self.extra_buttons[sub_item['name']]=edit
+                        self.dynamic_widgets[sub_item['name']]=edit
                         try:
                             colspan=sub_item['colspan']
                         except KeyError:
@@ -198,7 +208,8 @@ class Ui(window.Ui_MainWindow):
             if 'tooltip' in item:
                 tooltip=item['tooltip']
             btn.setToolTip(tooltip)
-            self.extra_buttons[btn_name]=btn
+            btn.setStatusTip(tooltip)
+            self.dynamic_widgets[btn_name]=btn
             btn.clicked.connect(
                     partial(self.execute_sequence, item))
             grid.addWidget(btn, row, col, rowspan, colspan)
@@ -213,12 +224,22 @@ class Ui(window.Ui_MainWindow):
             
 
 
-    def execute_sequence(self, sequence):
-        print(sequence)
+    def execute_sequence(self, command):
+        sequence=command['sequence']
+        inputs=[]
+        args={}
+        if command['inputs']:
+            for item in command['inputs']:
+                args[item['name']]=self.dynamic_widgets[item['name']].value()
+        print(args)
+        for seq in sequence:
+            print(seq)
+        
+        
 
     def load_register_read_buttons(self):
         self.registerGridLayout= QtWidgets.QGridLayout(self.tabRegisters)
-        self.extra_buttons={}
+        self.dynamic_widgets={}
         self.button_actions={}
         register_buttons=config.buttons['registers']
         index=0
@@ -232,7 +253,7 @@ class Ui(window.Ui_MainWindow):
             btn.setObjectName(item['name'])
             btn.setText(item['name'])
             btn.setToolTip(f"{item['name']}, address: {item['address']}")
-            self.extra_buttons[item['name']]=btn
+            self.dynamic_widgets[item['name']]=btn
             row=index//row_cols
             col=index%row_cols
             #if item['Operation'] in ['write','rw']:
@@ -381,19 +402,3 @@ class Ui(window.Ui_MainWindow):
 
 
 
-def main():
-    filename = None
-    if len(sys.argv) >= 2:
-        filename = sys.argv[1]
-    app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-    window = Ui(MainWindow)
-    MainWindow.show()
-    #if filename:
-    #    #window.openFile(filename)
-    sys.exit(app.exec_())
-
-
-if __name__ == '__main__':
-    main()
