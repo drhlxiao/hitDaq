@@ -135,11 +135,14 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
 
 
     def async_run(self, func, *args, **kwargs):
-        worker = Worker(func, *args, **kwargs) 
-        worker.signals.result.connect(self.handle_result)
-        worker.signals.finished.connect(self.handle_finished)
-        worker.signals.error.connect(self.error)
-        self.threadpool.start(worker)
+        try:
+            worker = Worker(func, *args, **kwargs) 
+            worker.signals.result.connect(self.handle_result)
+            worker.signals.finished.connect(self.handle_finished)
+            worker.signals.error.connect(self.error)
+            self.threadpool.start(worker)
+        except Exception as e:
+            self.error(str(e))
 
     def create_commands(self):
         self.add_command_to_group('basicOperationGroup', row_cols=5)
@@ -157,7 +160,6 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             with_inputs=False
             if 'inputs' in item:
                 if item['inputs']:
-                    print('here')
                     inputs=item['inputs']
                     row+=1
                     col=0
@@ -181,12 +183,10 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
                             edit.setMinimum(sub_item['min'])
                         if 'default' in sub_item:
                             edit.setValue(sub_item['default'])
-                            print(sub_item['default'])
 
                         #row=index//row_cols
                         #col=index%row_cols
 
-                        print(row,col)
                         self.dynamic_widgets[sub_item['name']]=edit
                         try:
                             colspan=sub_item['colspan']
@@ -259,7 +259,6 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
                 value=args[origin_value]
             elif isinstance(origin_value, int):
                 value=origin_value
-            print('seq writing', address, value)
             desc=''
             try:
                 desc=seq[3]
@@ -294,7 +293,6 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
 
         def _excecute_command():
             for seq in sequence:
-                print(seq)
                 if seq[0]=='set_register':
                     _sequence_write(seq)
                 elif seq[0]=='get_register': 
@@ -362,7 +360,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
 
     def error(self,msg, where=1):
         return self.show_message(msg,where, 'red')
-    def info(self,msg,where=1, timestamp=True, color='darkGray'):
+    def info(self,msg,where=1, timestamp=True, color=''):
         return self.show_message(msg,where,color, timestamp)
     def warning(self,msg,where=1):
         return self.show_message(msg,where,'yellow')
@@ -377,6 +375,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             item = QtWidgets.QListWidgetItem(msg)
             item.setForeground(QtGui.QColor(color))
             self.listWidget.addItem(item)
+            self.listWidget.scrollToBottom()
             return 'log',item
 
         
