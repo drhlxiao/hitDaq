@@ -6,7 +6,6 @@ import time
 import config
 import matplotlib.pyplot as plt
 
-from PyQt5.QtCore import QThread, pyqtSignal, QTimer, QObject
 
 cmd_write = 0xFF
 cmd_read  = 0x00
@@ -36,16 +35,14 @@ status_bits = ["spi_master_busy       ",
         "plllck                "]
 
 
-class DaqComm(QObject):
-    error_sig= pyqtSignal(str)
-    info_sig= pyqtSignal(str)
-    warning_sig= pyqtSignal(str)
+class DaqComm(object):
 
-    def __init__(self):
+    def __init__(self, parent):
         super(DaqComm, self).__init__()
         self.address = '10.42.0.130'
         self.port = 1002
         self.server_address = None
+        self.parent=parent
         self.s=None
         self.hw_ready=False
     def connect_host(self,address,port):
@@ -64,16 +61,12 @@ class DaqComm(QObject):
     def close_all(self):
         self.s.close()
     def error(self,msg):
-        self.error_sig.emit(msg)
+        self.parent.error(msg)
     def info(self,msg):
-        self.info_sig.emit(msg)
+        self.parent.info(msg)
     def warn(self,msg):
-        self.warning_sig.emit(msg)
+        self.parent.warning(msg)
 
-    def connect_signal_slots(self, slots):
-        self.error_sig.connect(slots['error'])
-        self.info_sig.connect(slots['info'])
-        self.warning_sig.connect(slots['warning'])
 
     def read(self,register):  
         a = (cmd_read & 0xF0) + ((register >> 4) & 0x0F)
@@ -116,6 +109,7 @@ class DaqComm(QObject):
               #print("Word %s = %s" %(word, hex(value[word])))
             return value
         except Exception as e:
+            raise
             self.error(str(e))
         return None
 
@@ -136,8 +130,9 @@ class DaqComm(QObject):
             self.info("register: %s read = %s" %(hex(addr_status), hex(value)))
             for bit in range(16):
                 self.info(f'\t{status_bits[bit]}:{((value >> bit) & 1) == 1}')
-            return
+            return None
         self.info(f"status for {addr_status}: None")
+        return None
 
 
 
@@ -278,9 +273,6 @@ class DaqComm(QObject):
     def list_event(self,event):
         return [self.read_samples(event, i) for i in range (8)]
 
-    #self.info(channel)
-        #self.info(len(y))
-        #self.info(y)
 
 
     def plot_channel(self,event, channel):
@@ -301,32 +293,6 @@ class DaqComm(QObject):
         return self.hw_ready
 
 
-    def init_daq(self):
-        if not self.is_connected:
-            self.error('hw not ready, connect first')
-            return False
-        sequences=config.config['hw_init_sequences']
-        try:
-            for seq in sequences:
-                self.info(seq[0])
-                values=seq[2]
-                if seq[3]=='hex':
-                    values=[int(x) for x in seq[2]]
-                if seq[1] == 'r':
-                    res=self.read_register(values[0])
-                    if res:
-                        msg="register: %s read = %s" %(hex(values[0]), hex(res))  
-                        self.info(msg)
-                elif seq[1] == 'w':
-                    self.write_register(values[0],values[1])
-                elif seq[1] == 's':
-                    self.status()
-            self.hw_ready=True
-            return True
-        except Exception as e:
-            raise Exception
-            self.hw_ready=False
-            self.error(str(e))
-        return False
+
 
 

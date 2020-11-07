@@ -11,10 +11,12 @@ import struct
 import pprint
 import socket
 import signal
+import math
 import webbrowser
 from functools import partial
 from datetime import datetime
 import numpy as np
+from functools import partial
 
 from PyQt5 import  QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QThread, pyqtSignal, QTimer, QObject, QRunnable, QThreadPool
@@ -23,8 +25,7 @@ from PyQt5.QtChart  import QBarSeries, QBarSet, QScatterSeries
 import window
 import daq_comm 
 
-import time
-import traceback, sys
+import config
 
 
 class WorkerSignals(QObject):
@@ -55,15 +56,6 @@ class WorkerSignals(QObject):
 class Worker(QRunnable):
     '''
     Worker thread
-
-    Inherits from QRunnable to handler worker thread setup, signals and wrap-up.
-
-    :param callback: The function callback to run on this worker thread. Supplied args and 
-                     kwargs will be passed through to the runner.
-    :type callback: function
-    :param args: Arguments to pass to the callback function
-    :param kwargs: Keywords to pass to the callback function
-
     '''
 
     def __init__(self, fn, *args, **kwargs):
@@ -75,23 +67,17 @@ class Worker(QRunnable):
         self.kwargs = kwargs
         self.signals = WorkerSignals()    
 
-        # Add the callback to our kwargs
-        #self.kwargs['progress_callback'] = self.signals.progress        
 
     def run(self):
         '''
         Initialise the runner function with passed args, kwargs.
         '''
-        
-        # Retrieve args/kwargs here; and fire processing using them
         try:
             result = self.fn(*self.args, **self.kwargs)
-        except:
-            traceback.print_exc()
-            exctype, value = sys.exc_info()[:2]
-            self.signals.error.emit((exctype, value, traceback.format_exc()))
-        else:
-            self.signals.result.emit(result)  # Return the result of the processing
+            if result:
+                self.signals.result.emit(result)  # Return the result of the processing
+        except Exception as e:
+            self.signals.error.emit(str(e))
         finally:
             self.signals.finished.emit()  # Done
 
@@ -101,71 +87,186 @@ class Ui(window.Ui_MainWindow):
         super(Ui, self).setupUi(MainWindow)
         self.MainWindow = MainWindow
         self.current_folder='.'
+        self.extra_layouts=[]
         self.is_connected=False
         button_connections={
                 self.connectBtn: self.connect_host,
-                self.selectFolderBtn: self.select_folder,
-                self.initBtn:self.init_board,
-                self.readStatBtn:self.read_status,
-                self.lastCmdBtn:self.last_command,
+                #self.selectFolderBtn: self.select_folder,
+                #self.initBtn:self.init_board,
+                #self.readStatBtn:self.read_status,
+                #self.lastCmdBtn:self.last_command,
                 self.hkSingleReadBtn:self.single_read,
                 self.hkStartBtn: self.hk_acq_start,
                 self.sciStartDRSBtn:self.sci_acq_start,
                 self.sciStopDRSBtn:self.sci_acq_stop,
                 self.sciTrigDRSBtn:self.sci_single_trigger,
                 self.sciSingReadBtn:self.sci_single_read,
-                self.calStartBtn:self.calibration_start,
-                self.calStopBtn:self.calibration_stop,
-                self.tempReadBtn:self.read_temperature
+                #self.calStartBtn:self.calibration_start,
+                #self.calStopBtn:self.calibration_stop,
+                #self.tempReadBtn:self.read_temperature
                 }
         for btn, fun in button_connections.items():
             btn.clicked.connect(fun)
-        #init slots
-        self.comm=daq_comm.DaqComm()
 
-        slots = {
-            'info': self.info,
-            'warning': self.warning,
-            'error': self.error,
-            'result': self.handle_result,
-            #'progress': self.progress
-        }
-        self.comm.connect_signal_slots(slots)
+        self.load_register_read_buttons()
+        self.create_commands()
+
+
+        self.comm=daq_comm.DaqComm(self)
+
         self.set_button_status(1, False)
         self.threadpool = QThreadPool()
     
     def set_button_status(self, level, status):
         button_groups={
-                0: [self.initBtn,  self.readStatBtn, self.lastCmdBtn, self.tempReadBtn],
+                0: [],
                 1: [self.hkSingleReadBtn, self.hkStartBtn, self.sciSingReadBtn, 
                     self.sciStartDRSBtn, self.sciStopDRSBtn,
                     self.sciTrigDRSBtn, self.calStopBtn, self.calStartBtn]}
         if level>=0:
             for btn in button_groups[0]:
                 btn.setEnabled(status)
+            for extra_btn in self.extra_buttons.values():
+                extra_btn.setEnabled(status)
         if level>=1:
             for btn in button_groups[1]:
                 btn.setEnabled(status)
 
+
+
     def async_run(self, func, *args, **kwargs):
-        worker = Worker(func) # Any other args, kwargs are passed to the run function
+        worker = Worker(func, *args, **kwargs) 
         worker.signals.result.connect(self.handle_result)
         worker.signals.finished.connect(self.handle_finished)
         worker.signals.error.connect(self.error)
         self.threadpool.start(worker)
 
+    def create_commands(self):
+        self.add_command_to_group('basicOperationGroup')
+        self.add_command_to_group('readoutsGroup')
+    def add_command_to_group(self, group_name):
+        group=self.MainWindow.findChild(QtWidgets.QGroupBox,group_name)
+        grid= QtWidgets.QGridLayout(group)
+        self.extra_layouts.append(grid)
+        commands=config.commands[group_name]
+        rowspan=1
+        colspan=1
+        row_cols=4
+        row=0
+        col=0
+        for item in commands:
+            with_inputs=False
+            if 'inputs' in item:
+                if item['inputs']:
+                    print('here')
+                    inputs=item['inputs']
+                    row+=1
+                    col=0
+                    label= QtWidgets.QLabel(group)
+                    label.setText(item['label'])
+                    grid.addWidget(label, row, col, rowspan, 1)
+                    row+=1
+                    col=0
+
+                    for sub_item in inputs:
+                        with_inputs=True
+                        edit= QtWidgets.QSpinBox(group)
+                        edit.setValue(sub_item['default'])
+                        edit.setObjectName(sub_item['name'])
+                        #row=index//row_cols
+                        #col=index%row_cols
+
+                        print(row,col)
+                        self.extra_buttons[sub_item['name']]=edit
+                        try:
+                            colspan=sub_item['colspan']
+                        except KeyError:
+                            colspan=1
+                        grid.addWidget(edit, row, col, rowspan, colspan)
+                        col+=colspan
+                        if col==row_cols:
+                            row+=1
+                            col=0
+
+            colspan=1
+            btn= QtWidgets.QPushButton(group)
+            btn_name=item['name']
+            btn_title=item['button_title']
+            btn.setObjectName(btn_name)
+            btn.setText(btn_title)
+            tooltip=btn_title
+            if 'tooltip' in item:
+                tooltip=item['tooltip']
+            btn.setToolTip(tooltip)
+            self.extra_buttons[btn_name]=btn
+            btn.clicked.connect(
+                    partial(self.execute_sequence, item))
+            grid.addWidget(btn, row, col, rowspan, colspan)
+            if with_inputs:
+                row+=1
+                col=0
+            else:
+                col+=1
+                if col==row_cols:
+                    row+=1
+                    col=0
+            
+
+
+    def execute_sequence(self, sequence):
+        print(sequence)
+
+    def load_register_read_buttons(self):
+        self.registerGridLayout= QtWidgets.QGridLayout(self.tabRegisters)
+        self.extra_buttons={}
+        self.button_actions={}
+        register_buttons=config.buttons['registers']
+        index=0
+        row_cols=6
+        rowspan=1
+        colspan=1
+        for item in register_buttons:
+            if item['Operation'] =='write':
+                continue
+            btn= QtWidgets.QPushButton(self.tabRegisters)
+            btn.setObjectName(item['name'])
+            btn.setText(item['name'])
+            btn.setToolTip(f"{item['name']}, address: {item['address']}")
+            self.extra_buttons[item['name']]=btn
+            row=index//row_cols
+            col=index%row_cols
+            #if item['Operation'] in ['write','rw']:
+            #    colspan=2
+            address=item['address']
+            if '0x' in address:
+                address=int(address,16)
+            else:
+                address=int(address)
+            
+            btn.clicked.connect(
+                partial(self.register_read, address))
+
+            self.registerGridLayout.addWidget(btn, row, col, rowspan, colspan)
+            index+=1
+            
+
 
     def handle_finished(self):
         pass
     def handle_result(self, data):
-        print(data)
         if isinstance(data,dict):
             if 'error'  in data:
                 self.error(data['error'])
+                return
             if 'info'  in data:
                 self.info(data['info'])
+                return
             if 'warning'  in data:
                 self.info(data['warning'])
+                return
+        self.info(str(data))
+
+
 
 
     def error(self,msg, where=1):
@@ -190,37 +291,39 @@ class Ui(window.Ui_MainWindow):
     def style(self):
         return self.MainWindow.style()
     def read_temperature(self):
-        res=self.comm.get_temperatures()
-        for msg in res: 
-            self.info(msg)
+        def _read_temperature():
+            res=self.comm.get_temperatures()
+            for msg in res: 
+                self.info(msg)
+        self.async_run(_read_temperature)
+
     def connect_host(self):
-        self.async_run(self._connect_host)
+        def _connect_host():
+            if  not self.is_connected:
+                address=self.ipAddressInput.text()
+                port=int(self.portInput.text())
+                self.info(f'Connecting host {address} port {port}...')
 
-    def _connect_host(self):
-        if  not self.is_connected:
-            address=self.ipAddressInput.text()
-            port=int(self.portInput.text())
-            self.info(f'Connecting host {address} port {port}...')
-
-            if self.comm.connect_host(address,port):
-                self.is_connected=True
-                self.info('Connected.')
-                self.connectBtn.setText('Disconnect')
-                self.portInput.setEnabled(False)
-                self.ipAddressInput.setEnabled(False)
-                self.connectBtn.setStyleSheet("background-color: green; color:white;")
-                self.set_button_status(0, True)
-            else:
-                self.error('Connection failed!')
-            return
-        self.comm.close_all()
-        self.info('Disconnected!')
-        self.connectBtn.setText('Connect')
-        self.portInput.setEnabled(True)
-        self.ipAddressInput.setEnabled(True)
-        self.is_connected=False
-        self.connectBtn.setStyleSheet("background-color: #e7e7e7")
-        self.set_button_status(1,False)
+                if self.comm.connect_host(address,port):
+                    self.is_connected=True
+                    self.info('Connected.')
+                    self.connectBtn.setText('Disconnect')
+                    self.portInput.setEnabled(False)
+                    self.ipAddressInput.setEnabled(False)
+                    self.connectBtn.setStyleSheet("background-color:green; color: white;")
+                    self.set_button_status(0, True)
+                else:
+                    self.error('Connection failed!')
+                return
+            self.comm.close_all()
+            self.info('Disconnected!')
+            self.connectBtn.setText('Connect')
+            self.portInput.setEnabled(True)
+            self.ipAddressInput.setEnabled(True)
+            self.is_connected=False
+            self.connectBtn.setStyleSheet("")
+            self.set_button_status(1,False)
+        self.async_run(_connect_host)
         
 
 
@@ -228,30 +331,22 @@ class Ui(window.Ui_MainWindow):
         self.current_folder= str(QtWidgets.QFileDialog.getExistingDirectory())
         self.folderLabel.setText(self.current_folder)
 
-    def init_board(self):
-        self.async_run(self._init_board)
-    def _init_board(self):
-        self.info('Initializing hardware ...', 0)
-        if self.comm.init_daq():
-            self.info('board initialized',0)
-            self.set_button_status(1,True)
-        else:
-            self.error('Failed to initialized hardware',0)
 
 
-    def read_status(self):
-        self.info('Reading ...', 0)
-        self.async_run(self.comm.status())
-        #self.info(msg)
+    #def read_status(self):
+    #    self.info('Reading ...', 0)
+    #    self.async_run(self.comm.status)
 
     def last_command(self):
-        reg=0x52
-        res=self.comm.read_register(reg)
-        if res:
-            msg="register: %s read = %s" %(hex(reg), hex(res))  
-            self.info(msg)
-        else:
-            self.info('Return value is None')
+        def _last_command():
+            reg=0x52
+            res=self.comm.read_register(reg)
+            if res:
+                msg="register: %s read = %s" %(hex(reg), hex(res))  
+                self.info(msg)
+            else:
+                self.info('Return value is None')
+        self.async_run(_last_command)
 
     def single_read(self):
         self.info('Read single event...', 0)
@@ -277,6 +372,12 @@ class Ui(window.Ui_MainWindow):
     def calibration_stop(self):
         self.info('Stopping calibration...', 0)
         pass
+    def register_read(self, reg):
+        def read_reg(reg_add):
+            self.info(f'Reading  {hex(reg)} ...')
+            result=self.comm.read_register(reg_add)
+            self.info(f'Register {hex(reg)} value: {result}')
+        self.async_run(read_reg, reg)
 
 
 
@@ -288,7 +389,6 @@ def main():
     MainWindow = QtWidgets.QMainWindow()
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     window = Ui(MainWindow)
-    print('gui_callback')
     MainWindow.show()
     #if filename:
     #    #window.openFile(filename)
