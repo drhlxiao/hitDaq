@@ -82,7 +82,7 @@ class Worker(QRunnable):
             self.signals.finished.emit()  # Done
 
 
-class Ui(window.Ui_MainWindow):
+class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
     def __init__(self, MainWindow):
         super(Ui, self).setupUi(MainWindow)
         self.MainWindow = MainWindow
@@ -90,7 +90,7 @@ class Ui(window.Ui_MainWindow):
         self.dynamic_layouts=[]
         self.is_connected=False
         button_connections={
-                self.connectBtn: self.connect_host,
+                self.connectBtn: self.ui_connect_host,
                 #self.selectFolderBtn: self.select_folder,
                 #self.initBtn:self.init_board,
                 #self.readStatBtn:self.read_status,
@@ -112,7 +112,7 @@ class Ui(window.Ui_MainWindow):
         self.create_commands()
 
 
-        self.comm=daq_comm.DaqComm(self)
+        #self=daq_comm.DaqComm(self)
 
         self.set_button_status(1, False)
         self.threadpool = QThreadPool()
@@ -226,16 +226,84 @@ class Ui(window.Ui_MainWindow):
 
     def execute_sequence(self, command):
         sequence=command['sequence']
-        inputs=[]
         args={}
-        if command['inputs']:
+        try:
             for item in command['inputs']:
-                args[item['name']]=self.dynamic_widgets[item['name']].value()
-        print(args)
-        for seq in sequence:
-            print(seq)
-        
-        
+                if item['type'] == 'int':
+                    args[item['name']]=self.dynamic_widgets[item['name']].value()
+                else:
+                    args[item['name']]=self.dynamic_widgets[item['name']].text()
+
+        except Exception as e:
+            pass
+        def _sequence_read(seq):
+            loc, item=self.info(seq[2],color='darkYello')
+            value=self.read_register(seq[1])
+            
+            if value:
+                self.info(f'Result raw value: {value}',color='darkCyan')
+                if len(seq)==4:
+                    callback=seq[3]
+                    method = getattr(self, 'comm.status')
+                    print('mode')
+                    print(method)
+
+
+        def _sequence_write(seq):
+            value=0
+            origin_value=seq[2]
+            address=seq[1]
+            if isinstance(origin_value, str) and origin_value in args:
+                value=args[origin_value]
+            elif isinstance(origin_value, int):
+                value=origin_value
+            print('seq writing', address, value)
+            desc=''
+            try:
+                desc=seq[3]
+                placeholder='{'+str(origin_value)+'}'
+                if placeholder in desc:
+                    desc=desc.replace(placeholder,str(value))
+            except Exception as e:
+                self.error(str(e))
+            self.write_register(address, value,desc)
+        def _burst_read(seq):
+            reg=seq[1]
+            self.info('Burst read ... ')
+            values=self.read_burst(reg)  
+            if not values:
+                self.info('Result is None')
+                return
+
+            self.info(f'Results (n={len(values)}):')
+            result='['
+            if values:
+                for i, val in enumerate(values):
+                    result+=f'{val},'
+                    if i%8==0 and i>0:
+                        self.info('{:50}'.format(result), timestamp=False, color='blue')
+                        result=''
+                if result:
+                    self.info('{:50}]'.format(result), timestamp=False, color='blue')
+
+                    
+
+            
+
+        def _excecute_command():
+            for seq in sequence:
+                print(seq)
+                if seq[0]=='set_register':
+                    _sequence_write(seq)
+                elif seq[0]=='get_register': 
+                    _sequence_read(seq)
+                elif seq[0]=='get_burst_from_register':
+                    _burst_read(seq)
+
+
+        self.async_run(_excecute_command)
+            
+            
 
     def load_register_read_buttons(self):
         self.registerGridLayout= QtWidgets.QGridLayout(self.tabRegisters)
@@ -291,21 +359,24 @@ class Ui(window.Ui_MainWindow):
 
 
     def error(self,msg, where=1):
-        self.show_message(msg,where, 'red')
-    def info(self,msg,where=1, timestamp=True):
-        self.show_message(msg,where,'dakGray', timestamp)
+        return self.show_message(msg,where, 'red')
+    def info(self,msg,where=1, timestamp=True, color='darkGray'):
+        return self.show_message(msg,where,color, timestamp)
     def warning(self,msg,where=1):
-        self.show_message(msg,where,'yellow')
+        return self.show_message(msg,where,'yellow')
 
     def show_message(self, msg, where=0, color='darkGray', timestamp=True):
         if where != 1:
             self.statusbar.showMessage(msg)
+            return 'status', self.statusbar
         if where != 0:
             if timestamp:
                 msg=f'[{datetime.now().isoformat()}] {msg}'
             item = QtWidgets.QListWidgetItem(msg)
             item.setForeground(QtGui.QColor(color))
             self.listWidget.addItem(item)
+            return 'log',item
+
         
     def close(self):
         self.MainWindow.close()
@@ -313,19 +384,19 @@ class Ui(window.Ui_MainWindow):
         return self.MainWindow.style()
     def read_temperature(self):
         def _read_temperature():
-            res=self.comm.get_temperatures()
+            res=self.get_temperatures()
             for msg in res: 
                 self.info(msg)
         self.async_run(_read_temperature)
 
-    def connect_host(self):
+    def ui_connect_host(self):
         def _connect_host():
             if  not self.is_connected:
                 address=self.ipAddressInput.text()
                 port=int(self.portInput.text())
                 self.info(f'Connecting host {address} port {port}...')
 
-                if self.comm.connect_host(address,port):
+                if self.connect_host(address,port):
                     self.is_connected=True
                     self.info('Connected.')
                     self.connectBtn.setText('Disconnect')
@@ -336,7 +407,7 @@ class Ui(window.Ui_MainWindow):
                 else:
                     self.error('Connection failed!')
                 return
-            self.comm.close_all()
+            self.close_all()
             self.info('Disconnected!')
             self.connectBtn.setText('Connect')
             self.portInput.setEnabled(True)
@@ -356,12 +427,12 @@ class Ui(window.Ui_MainWindow):
 
     #def read_status(self):
     #    self.info('Reading ...', 0)
-    #    self.async_run(self.comm.status)
+    #    self.async_run(self.status)
 
     def last_command(self):
         def _last_command():
             reg=0x52
-            res=self.comm.read_register(reg)
+            res=self.read_register(reg)
             if res:
                 msg="register: %s read = %s" %(hex(reg), hex(res))  
                 self.info(msg)
@@ -396,7 +467,7 @@ class Ui(window.Ui_MainWindow):
     def register_read(self, reg):
         def read_reg(reg_add):
             self.info(f'Reading  {hex(reg)} ...')
-            result=self.comm.read_register(reg_add)
+            result=self.read_register(reg_add)
             self.info(f'Register {hex(reg)} value: {result}')
         self.async_run(read_reg, reg)
 

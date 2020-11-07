@@ -51,9 +51,9 @@ commands = {
 
                 'sequence': [
                     ('get_register', 0x21,
-                     "Reading the temperature from I2C device 0x90"),
+                     "Reading the temperature from I2C device 0x90", 'comm._decode_temp'),
                     ('get_register', 0x22,
-                     "Reading the temperature from I2C device 0x92"),
+                     "Reading the temperature from I2C device 0x92", 'comm._decode_temp'),
                 ],
             },
             {
@@ -62,7 +62,7 @@ commands = {
                 'type': 'inline',
                 'inputs': None,
                 'sequence': [
-                    ('get_register', 0x02, "Reading the status"),
+                    ('get_register', 0x02, "Reading the status", 'comm.decode_status'),
                 ],
             },
             {
@@ -144,9 +144,9 @@ commands = {
                         "Setting the full readout mode"),
                     ('set_register', 0x81, 0x01FF,  "Enabling all channels"),
                     ('set_register', 0x82, 'ROI_delay_input',
-                        "Setting the delay to 200"),
-                    ('set_register', 0x83, 'ROI_readout_length',
-                        "Setting the readout length to 100"),
+                        "Setting the delay to {ROI_delay_input}"),
+                    ('set_register', 0x83, 'ROI_length_input',
+                        "Setting the readout length to {ROI_length_input}"),
                 ]
             },
             {
@@ -164,9 +164,9 @@ commands = {
                     ('set_register', 0x81, 0x01FF,
                         "Enabling all channels"),
                     ('set_register', 0x83, 'smart_read_length',
-                        "Setting the readout length to 100"),
+                        "Setting the readout length to {smart_read_length}"),
                     ('set_register', 0x84, 'smart_read_start_cell',
-                        "Setting the start cell to 300"),
+                        "Setting the start cell to {smart_read_start_cell}"),
                 ],
             },
 
@@ -180,9 +180,9 @@ commands = {
 
                 'sequence': [
                     ('set_register', 0x72, 'nb_burst_reads',
-                        "Setting the burst readout length "),
+                        "Setting the burst readout length to {nb_burst_reads} "),
                     ('get_burst_from_register', 0x71,
-                        "Burst read of 100 words from register"),
+                        "Burst read of words from register"),
                 ]
             }
         ]

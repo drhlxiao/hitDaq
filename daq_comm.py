@@ -6,6 +6,7 @@ import time
 import config
 import matplotlib.pyplot as plt
 
+from PyQt5 import  QtWidgets, QtCore, QtGui
 
 cmd_write = 0xFF
 cmd_read  = 0x00
@@ -45,6 +46,9 @@ class DaqComm(object):
         self.parent=parent
         self.s=None
         self.hw_ready=False
+        self.telcommand_counter=0
+        self.telemetry_counter=0
+
     def connect_host(self,address,port):
         self.address=address
         self.port = port
@@ -60,12 +64,12 @@ class DaqComm(object):
         return False
     def close_all(self):
         self.s.close()
-    def error(self,msg):
-        self.parent.error(msg)
-    def info(self,msg):
-        self.parent.info(msg)
-    def warn(self,msg):
-        self.parent.warning(msg)
+    def error(self,*args, **kargs):
+        return self.parent.error(*args, **kargs)
+    def info(self,*args, **kargs):
+        return self.parent.info(*args, **kargs)
+    def warn(self,*args, **kargs):
+        return self.parent.warning(*args, **kargs)
 
 
     def read(self,register):  
@@ -124,6 +128,16 @@ class DaqComm(object):
         value = self.read(register)
         return value
 
+    def decode_status(self, addr_status, value):
+        if value:
+            self.info("register: %s read = %s" %(hex(addr_status), hex(value)))
+            for bit in range(16):
+                self.info(f'\t{status_bits[bit]}:{((value >> bit) & 1) == 1}')
+            return None
+        self.info(f"status for {addr_status}: None")
+        return None
+
+
     def status(self):
         value = self.read(addr_status)
         if value:
@@ -142,6 +156,8 @@ class DaqComm(object):
         else:
             decoded = readout * 0.0078125
         return decoded
+    def _decode_temp(self, reg, readout):
+        return self.decode_temp(readout)
 
     def get_temperatures(self):
         t1 = self.read(0x21)
@@ -174,12 +190,26 @@ class DaqComm(object):
             while amount_received < amount_expected:
                 data[amount_received] = self.s.recv(1)
                 amount_received += 1
+            return True
         except Exception as e:
             self.error(str(e))
+        return False
 
-    def write_register(self,register, value):  
-        self.write(register, value)
-        self.info("register: %s written = %s" %(hex(register), hex(value)))
+    def write_register(self,register, value, desc=''):  
+        msg=''
+        if desc:
+            msg=(" {:50} (Register: {}, value: {})".format(desc, hex(register), value))
+        else:
+            msg=("Writing register: {}, value: {}".format(hex(register), hex(value)))
+
+        loc, item=self.info(msg)
+        print('writting', register, value)
+        status=self.write(register, value)
+        if loc=='log':
+            color='green' if status else 'red'
+            item.setForeground(QtGui.QColor(color))
+
+
 
     def read_sram(self,address):
         row = (address & 0x7FF)
