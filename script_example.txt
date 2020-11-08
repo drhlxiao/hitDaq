@@ -1,0 +1,10 @@
+read 0x00
+#Heaters off
+write 0x20 0x0F
+#Setting DAC: BIAS to 0.8V
+write 0x40 0x4E10  #write register
+wait 5 
+#wait time in seconds
+#echo Setting DAC: ROFS to 1.595V
+write 0x4B 0x9FFF
+
