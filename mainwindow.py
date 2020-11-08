@@ -88,6 +88,8 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         self.MainWindow = MainWindow
         self.current_folder='.'
         self.dynamic_layouts=[]
+        self.dynamic_widgets={}
+        self.button_actions={}
         self.is_connected=False
         button_connections={
                 self.connectBtn: self.ui_connect_host,
@@ -108,8 +110,8 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         for btn, fun in button_connections.items():
             btn.clicked.connect(fun)
 
-        self.load_register_read_buttons()
-        self.create_commands()
+        #self.load_register_read_buttons()
+        self.load_widgets()
 
 
         #self=daq_comm.DaqComm(self)
@@ -144,59 +146,72 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         except Exception as e:
             self.error(str(e))
 
-    def create_commands(self):
-        self.add_command_to_group('basicOperationGroup', row_cols=5)
-        self.add_command_to_group('readoutsGroup', row_cols=4)
-    def add_command_to_group(self, group_name, row_cols):
-        group=self.MainWindow.findChild(QtWidgets.QGroupBox,group_name)
+    def load_widgets(self):
+        self.create_groups('basicOperationGroup')
+        self.create_groups('readoutsGroup')
+        self.create_groups('readRegisterGroup')
+        #self.create_groups('writeRegisterGroup')
+        #self.create_groups('readWriteRegisterGroup')
+
+
+    def create_groups(self, group_name):
+        container=config.commands[group_name]['container']
+        print('registering',group_name)
+        group=self.MainWindow.findChild(QtWidgets.QWidget,container)
+        if not group:
+            self.error('Can not find container {}'.format(container))
+            return
         grid= QtWidgets.QGridLayout(group)
         self.dynamic_layouts.append(grid)
-        commands=config.commands[group_name]
+        commands=config.commands[group_name]['sequences']
+        row_cols=config.commands[group_name]['grid_columns']
         rowspan=1
         colspan=1
         row=0
         col=0
         for item in commands:
             with_inputs=False
-            if 'inputs' in item:
-                if item['inputs']:
-                    inputs=item['inputs']
+            layout=item.get('layout','inline')
+            inputs=item.get('inputs',None)
+            
+            if inputs:
+                if layout=='row':
                     row+=1
                     col=0
-                    label= QtWidgets.QLabel(group)
-                    label.setText(item['label'])
-                    grid.addWidget(label, row, col, rowspan, 1)
+                label= QtWidgets.QLabel(group)
+                label.setText(item['label'])
+                grid.addWidget(label, row, col, rowspan, 1)
+                if layout=='row':
                     row+=1
                     col=0
+                else:
+                    col+=1
+                    if col>=colspan:
+                        col=1
 
-                    for sub_item in inputs:
-                        with_inputs=True
+                for sub_item in inputs:
+                    with_inputs=True
 
-                        edit= QtWidgets.QSpinBox(group)
-                        edit.setObjectName(sub_item['name'])
-                        if 'tooltip' in sub_item:
-                            edit.setToolTip(sub_item['tooltip'])
-                            edit.setStatusTip(sub_item['tooltip'])
-                        if 'max' in sub_item:
-                            edit.setMaximum(sub_item['max'])
-                        if 'min' in sub_item:
-                            edit.setMinimum(sub_item['min'])
-                        if 'default' in sub_item:
-                            edit.setValue(sub_item['default'])
+                    edit= QtWidgets.QSpinBox(group)
+                    edit.setObjectName(sub_item['name'])
+                    if 'tooltip' in sub_item:
+                        edit.setToolTip(sub_item['tooltip'])
+                        edit.setStatusTip(sub_item['tooltip'])
+                    if 'max' in sub_item:
+                        edit.setMaximum(sub_item['max'])
+                    if 'min' in sub_item:
+                        edit.setMinimum(sub_item['min'])
+                    if 'default' in sub_item:
+                        edit.setValue(sub_item['default'])
+                    self.dynamic_widgets[sub_item['name']]=edit
+                    colspan=sub_item.get('colspan',1)
+                    print(sub_item['name'], row, col, rowspan, colspan)
+                    grid.addWidget(edit, row, col, rowspan, colspan)
 
-                        #row=index//row_cols
-                        #col=index%row_cols
-
-                        self.dynamic_widgets[sub_item['name']]=edit
-                        try:
-                            colspan=sub_item['colspan']
-                        except KeyError:
-                            colspan=1
-                        grid.addWidget(edit, row, col, rowspan, colspan)
-                        col+=colspan
-                        if col==row_cols:
-                            row+=1
-                            col=0
+                    col+=colspan
+                    if col>=row_cols:
+                        row+=1
+                        col=0
 
             colspan=1
             btn= QtWidgets.QPushButton(group)
@@ -204,28 +219,84 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             btn_title=item['button_title']
             btn.setObjectName(btn_name)
             btn.setText(btn_title)
-            tooltip=btn_title
-            if 'tooltip' in item:
-                tooltip=item['tooltip']
+            tooltip=item.get('tooltip',btn_title)
             btn.setToolTip(tooltip)
             btn.setStatusTip(tooltip)
             self.dynamic_widgets[btn_name]=btn
             btn.clicked.connect(
                     partial(self.execute_sequence, item))
             grid.addWidget(btn, row, col, rowspan, colspan)
-            if with_inputs:
+
+            if layout=='row':
                 row+=1
                 col=0
             else:
                 col+=1
-                if col==row_cols:
+                if col>=row_cols:
                     row+=1
                     col=0
             
 
+    def _sequence_read(self, seq, args):
+        loc, item=self.info(seq[2],color='darkYello')
+        value=self.read_register(seq[1][0])
+        if value is not None:
+            self.info(f'Result raw value: {value}',color='darkCyan')
+            if len(seq[0])>1:
+                print('calling back')
+                callback= getattr(self, seq[0][1])
+                print(callback)
+                print(seq[1], value)
+                result=callback(seq[1], value)
+                if result:
+                    self.info(f'Eng. value: {result}',color='darkCyan')
 
-    def execute_sequence(self, command):
+
+
+    def _sequence_write(self, seq, args):
+        value=0
+        print('write:')
+        print(seq)
+        address, origin_value=seq[1]
+        #args=seq['args']
+        if isinstance(origin_value, str) and origin_value in args:
+            value=args[origin_value]
+        elif isinstance(origin_value, int):
+            value=origin_value
+        desc=''
+        try:
+            desc=seq[2]
+            placeholder='{'+str(origin_value)+'}'
+            if placeholder in desc:
+                desc=desc.replace(placeholder,str(value))
+        except Exception as e:
+            self.error(str(e))
+        self.write_register(address, value,desc)
+    def _burst_read(self,seq, args):
+        reg=seq[1][0]
+        self.info('Burst read ... ')
+        values=self.read_burst(reg)  
+        if not values:
+            self.info('Result is None')
+            return None
+
+        self.info(f'Results (n={len(values)}):')
+        result='['
+        if values:
+            for i, val in enumerate(values):
+                result+=f'{val},'
+                if i%8==0 and i>0:
+                    self.info('{:50}'.format(result), timestamp=False, color='blue')
+                    result=''
+            if result:
+                self.info('{:50}]'.format(result), timestamp=False, color='blue')
+        return None
+
+
+    def execute_sequence(self, command, args):
         sequence=command['sequence']
+        thread_lock=command.get('thread_lock', False)
+
         args={}
         try:
             for item in command['inputs']:
@@ -236,88 +307,39 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
 
         except Exception as e:
             pass
-        def _sequence_read(seq):
-            loc, item=self.info(seq[2],color='darkYello')
-            value=self.read_register(seq[1])
-            
-            if value:
-                self.info(f'Result raw value: {value}',color='darkCyan')
-                if len(seq)==4:
-                    callback_name=seq[3]
-                    callback= getattr(self, callback_name)
-                    result=callback(seq[1], value)
-                    if result:
-                        self.info(f'Eng. value: {result}',color='darkCyan')
-
-
-
-        def _sequence_write(seq):
-            value=0
-            origin_value=seq[2]
-            address=seq[1]
-            if isinstance(origin_value, str) and origin_value in args:
-                value=args[origin_value]
-            elif isinstance(origin_value, int):
-                value=origin_value
-            desc=''
-            try:
-                desc=seq[3]
-                placeholder='{'+str(origin_value)+'}'
-                if placeholder in desc:
-                    desc=desc.replace(placeholder,str(value))
-            except Exception as e:
-                self.error(str(e))
-            self.write_register(address, value,desc)
-        def _burst_read(seq):
-            reg=seq[1]
-            self.info('Burst read ... ')
-            values=self.read_burst(reg)  
-            if not values:
-                self.info('Result is None')
-                return
-
-            self.info(f'Results (n={len(values)}):')
-            result='['
-            if values:
-                for i, val in enumerate(values):
-                    result+=f'{val},'
-                    if i%8==0 and i>0:
-                        self.info('{:50}'.format(result), timestamp=False, color='blue')
-                        result=''
-                if result:
-                    self.info('{:50}]'.format(result), timestamp=False, color='blue')
-
-                    
-
-            
-
         def _excecute_command():
+            if thread_lock:
+                try:
+                    self.dynamic_widgets[command['name']].setEnabled(False)
+                except:
+                    pass
             for seq in sequence:
-                if seq[0]=='set_register':
-                    _sequence_write(seq)
-                elif seq[0]=='get_register': 
-                    _sequence_read(seq)
-                elif seq[0]=='get_burst_from_register':
-                    _burst_read(seq)
+                func_name=seq[0][0]
+                print('function name:',func_name)
+                func= getattr(self, func_name)
+                if func:
+                    result=func(seq, args=args)
+            try:
+                self.dynamic_widgets[command['name']].setEnabled(True)
+            except:
+                pass
 
+        _excecute_command()
 
-        self.async_run(_excecute_command)
+        #self.async_run(_excecute_command)
             
             
-
     def load_register_read_buttons(self):
-        self.registerGridLayout= QtWidgets.QGridLayout(self.tabRegisters)
-        self.dynamic_widgets={}
-        self.button_actions={}
+        self.registerGridLayout= QtWidgets.QGridLayout(self.registerReadTab)
         register_buttons=config.buttons['registers']
         index=0
         row_cols=6
         rowspan=1
         colspan=1
         for item in register_buttons:
-            if item['Operation'] =='write':
+            if item['Operation'] !='read':
                 continue
-            btn= QtWidgets.QPushButton(self.tabRegisters)
+            btn= QtWidgets.QPushButton(self.registerReadTab)
             btn.setObjectName(item['name'])
             btn.setText(item['name'])
             btn.setToolTip(f"{item['name']}, address: {item['address']}")

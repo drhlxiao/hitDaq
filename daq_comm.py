@@ -125,10 +125,13 @@ class DaqComm(object):
 
 
     def read_register(self,register):  
+        print('reading ', register)
         value = self.read(register)
+        print('result:',value)
         return value
 
-    def decode_status(self, addr_status, value):
+    def decode_status(self, inputs_tuple, value):
+        addr_status=inputs_tuple[0]
         if value:
             self.info("register: %s read = %s" %(hex(addr_status), hex(value)))
             for bit in range(16):
@@ -156,7 +159,10 @@ class DaqComm(object):
         else:
             decoded = readout * 0.0078125
         return decoded
-    def _decode_temp(self, reg, readout):
+    def _decode_temp(self, inputs,  readout):
+        #reg=inputs[0]
+        print('here')
+        print(inputs, readout)
         return self.decode_temp(readout)
 
     def get_temperatures(self):
