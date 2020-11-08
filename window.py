@@ -269,6 +269,7 @@ class Ui_MainWindow(object):
         self.enableArchingButton.setObjectName("enableArchingButton")
         self.gridLayout.addWidget(self.enableArchingButton, 3, 1, 1, 1)
         self.truncateArchivingButton = QtWidgets.QPushButton(self.frame_2)
+        self.truncateArchivingButton.setEnabled(False)
         self.truncateArchivingButton.setObjectName("truncateArchivingButton")
         self.gridLayout.addWidget(self.truncateArchivingButton, 3, 2, 1, 1)
         spacerItem8 = QtWidgets.QSpacerItem(711, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)

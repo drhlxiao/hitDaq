@@ -135,6 +135,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
 
     def closeEvent(self, event):
         self.archive_manager.stop()
+        self.close_all()
         self.MainWindow.close()
 
 
@@ -146,6 +147,10 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             filename=self.archive_manager.truncate()
             if filename:
                 self.info(f'Archive filename:{filename}')
+                return
+        self.error(f'Archiving was not running.')
+
+
 
 
     def enable_archiving(self):
@@ -176,6 +181,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         state='ON' if self.archiving_enabled  else 'OFF'
         style="background-color:green; color: white;" if self.archiving_enabled  else 'color: rgb(255, 255, 255); background-color: rgb(239, 41, 41);'
         self.archiveStatusLabel.setText(state)
+        self.truncateArchivingButton.setEnabled(self.archiving_enabled)
         self.archiveStatusLabel.setStyleSheet(style)
 
     def on_timeout(self):
@@ -324,7 +330,6 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
 
     def create_groups(self, group_name):
         container=config.commands[group_name]['container']
-        print('registering',group_name)
         group=self.MainWindow.findChild(QtWidgets.QWidget,container)
         if not group:
             self.error('Can not find container {}'.format(container))
@@ -373,7 +378,6 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
                         edit.setValue(sub_item['default'])
                     self.dynamic_widgets[sub_item['name']]=edit
                     colspan=sub_item.get('colspan',1)
-                    print(sub_item['name'], row, col, rowspan, colspan)
                     grid.addWidget(edit, row, col, rowspan, colspan)
 
                     col+=colspan
@@ -411,10 +415,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         if value is not None:
             self.info(f'Result raw value: {value}',color='darkCyan')
             if len(seq[0])>1:
-                print('calling back')
                 callback= getattr(self, seq[0][1])
-                print(callback)
-                print(seq[1], value)
                 result=callback(seq[1], value)
                 if result:
                     self.info(f'Eng. value: {result}',color='darkCyan')

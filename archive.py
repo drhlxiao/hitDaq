@@ -29,7 +29,6 @@ class Archive(object):
             if len(self.buffer)==0:
                 self.fp.close()
                 return
-        print('buffer size:', len(self.buffer))
         for item in self.buffer:
             stream=item[0]+','
             if isinstance(item[1], list):
@@ -39,14 +38,14 @@ class Archive(object):
             self.file_size_written+=len(stream)
             self.fp.write(stream)
             self.fp.write('\n')
-            self.buffer=[]
-            self.current_buffer_size=0
-            if self.file_size_written>self.max_file_size or force_dump:
-                self.fp.close()
-                
-                self.fp=None
-                if create_new:
-                    self.create_new_file()
+        self.buffer=[]
+        self.current_buffer_size=0
+        if self.file_size_written>self.max_file_size or force_dump:
+            self.fp.close()
+            
+            self.fp=None
+            if create_new:
+                self.create_new_file()
 
 
 
@@ -94,6 +93,7 @@ class Archive(object):
             self.dump(force_dump=True, create_new=True)
             self.current_buffer_size=0
             return self.filename
+        
         return False
 
 
