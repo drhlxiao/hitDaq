@@ -97,6 +97,8 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
                 #self.initBtn:self.init_board,
                 #self.readStatBtn:self.read_status,
                 #self.lastCmdBtn:self.last_command,
+                self.registerReadButton: self._register_read,
+                self.registerWriteButton: self._register_write,
                 self.hkSingleReadBtn:self.single_read,
                 self.hkStartBtn: self.hk_acq_start,
                 self.sciStartDRSBtn:self.sci_acq_start,
@@ -110,7 +112,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         for btn, fun in button_connections.items():
             btn.clicked.connect(fun)
 
-        #self.load_register_read_buttons()
+        self.load_register_read_buttons()
         self.load_widgets()
 
 
@@ -118,6 +120,52 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
 
         self.set_button_status(1, False)
         self.threadpool = QThreadPool()
+    def _register_read(self):
+        add=self.registerAddressInput.text()
+        address=0
+        name=self.registerNameLabel.text()
+
+        try:
+            if '0x' in add:
+                address=int(add,16)
+            else:
+                address=int(add)
+        except Exception as e:
+            self.error('Invalid parameters')
+            return
+
+        loc, item=self.info(f'Reading register {name} (addr {address})',color='darkYello')
+        value=self.read_register(address)
+        if value is not None:
+            self.info(f'{name} raw value {value}',color='darkCyan')
+
+    def _register_write(self):
+        add=self.registerAddressInput.text()
+        val=self.registerValueInput.text()
+        address=0
+        value=0
+        name=self.registerNameLabel.text()
+
+
+        try:
+            if '0x' in add:
+                address=int(add,16)
+            else:
+                address=int(add)
+            if '0x' in val:
+                value=int(val,16)
+            else:
+                value=int(val)
+            
+        except Exception as e:
+            self.error('Invalid parameters')
+            return
+
+
+        value=self.write_register(address, value, 'Writing '+name)
+
+
+
     
     def set_button_status(self, level, status):
         button_groups={
@@ -271,7 +319,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
                 desc=desc.replace(placeholder,str(value))
         except Exception as e:
             self.error(str(e))
-        self.write_register(address, value,desc)
+        self.write_register(address, value, desc)
     def _burst_read(self,seq, args):
         reg=seq[1][0]
         self.info('Burst read ... ')
@@ -330,35 +378,40 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             
             
     def load_register_read_buttons(self):
-        self.registerGridLayout= QtWidgets.QGridLayout(self.registerReadTab)
-        register_buttons=config.buttons['registers']
+        self.registerGridLayout= QtWidgets.QGridLayout(self.registerListGroup)
+        register_buttons=config.registers
         index=0
         row_cols=6
         rowspan=1
         colspan=1
         for item in register_buttons:
-            if item['Operation'] !='read':
+            if 'write' not in item['operation']:
                 continue
-            btn= QtWidgets.QPushButton(self.registerReadTab)
+            btn= QtWidgets.QPushButton(self.registerListGroup)
             btn.setObjectName(item['name'])
             btn.setText(item['name'])
             btn.setToolTip(f"{item['name']}, address: {item['address']}")
             self.dynamic_widgets[item['name']]=btn
             row=index//row_cols
             col=index%row_cols
-            #if item['Operation'] in ['write','rw']:
-            #    colspan=2
-            address=item['address']
-            if '0x' in address:
-                address=int(address,16)
-            else:
-                address=int(address)
             
             btn.clicked.connect(
-                partial(self.register_read, address))
+                partial(self.set_current_register, item))
 
             self.registerGridLayout.addWidget(btn, row, col, rowspan, colspan)
             index+=1
+    def set_current_register(self, item):
+        address=item['address']
+        default=item['default']
+        operation=item['operation']
+        self.registerAddressInput.setText(address)
+        self.registerNameLabel.setText(item['name'])
+        if 'write' in operation:
+            self.registerValueInput.setText(default)
+        self.registerReadButton.setEnabled('read' in operation)
+        self.registerWriteButton.setEnabled('write' in operation)
+
+
             
 
 

@@ -481,8 +481,7 @@ commands = {
                     ]
                                         },
             }
-commands_disabled=
-{
+commands_disabled={
         'readWriteRegisterGroup': 
         {
             'container':'registerReadWriteTab',
@@ -1289,3 +1288,473 @@ commands_disabled=
 
 
         }
+registers=[
+  {
+    "name": "constant",
+    "address": "0x00",
+    "operation": "read",
+    "default": "0xCAFE"
+  },
+  {
+    "name": "dummy",
+    "address": "0x01",
+    "operation": "read/write",
+    "default": "0xC0DE"
+  },
+  {
+    "name": "status",
+    "address": "0x02",
+    "operation": "read",
+    "default": ""
+  },
+  {
+    "name": "triggers",
+    "address": "0x06",
+    "operation": "read",
+    "default": ""
+  },
+  {
+    "name": "timestamp",
+    "address": "0x0E",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "operation",
+    "address": "0x0F",
+    "operation": "read/write",
+    "default": "0x0004"
+  },
+  {
+    "name": "heaters",
+    "address": "0x20",
+    "operation": "read/write",
+    "default": "0x00FF"
+  },
+  {
+    "name": "temp_90",
+    "address": "0x21",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "temp_92",
+    "address": "0x22",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "dac_hv1",
+    "address": "0x30",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "dac_hv2",
+    "address": "0x31",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "dac_hv3",
+    "address": "0x32",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "dac_hv4",
+    "address": "0x33",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "dac_hv5",
+    "address": "0x34",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "dac_hv6",
+    "address": "0x35",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "dac_hv7",
+    "address": "0x36",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "dac_hv8",
+    "address": "0x37",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "dac_tlevel1",
+    "address": "0x38",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "dac_tlevel2",
+    "address": "0x39",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "dac_tlevel3",
+    "address": "0x3A",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "dac_tlevel4",
+    "address": "0x3B",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "dac_tlevel5",
+    "address": "0x3C",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "dac_tlevel6",
+    "address": "0x3D",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "dac_tlevel7",
+    "address": "0x3E",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "dac_tlevel8",
+    "address": "0x3F",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "dac_bias",
+    "address": "0x40",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "dac_va",
+    "address": "0x41",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "dac_vb",
+    "address": "0x42",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "dac_rofs",
+    "address": "0x4B",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "dac_calp",
+    "address": "0x4C",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "dac_calm",
+    "address": "0x4D",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "calibration",
+    "address": "0x4E",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "drs_config",
+    "address": "0x4F",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "last_command",
+    "address": "0x50",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "last_data",
+    "address": "0x51",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "command_count",
+    "address": "0x52",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "sram_data",
+    "address": "0x60",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "sram_data_inc",
+    "address": "0x61",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "sram_address_row",
+    "address": "0x62",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "sram_address_col",
+    "address": "0x63",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "sram_pointer_write",
+    "address": "0x64",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "sram_demo_data",
+    "address": "0x6E",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "sram_data_burst",
+    "address": "0x6F",
+    "operation": "write",
+    "default": "0x0000"
+  },
+  {
+    "name": "fifo",
+    "address": "0x70",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "fifo_burst",
+    "address": "0x71",
+    "operation": "read",
+    "default": "0x000A"
+  },
+  {
+    "name": "fifo_burst_length",
+    "address": "0x72",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "readout_mode",
+    "address": "0x80",
+    "operation": "read/write",
+    "default": "0x0003"
+  },
+  {
+    "name": "readout_channels",
+    "address": "0x81",
+    "operation": "read/write",
+    "default": "0x01FF"
+  },
+  {
+    "name": "readout_delay",
+    "address": "0x82",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "readout_length",
+    "address": "0x83",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "readout_start",
+    "address": "0x84",
+    "operation": "read/write",
+    "default": "0x0000"
+  },
+  {
+    "name": "counter_pattern_0",
+    "address": "0xD0",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "counter_pattern_1",
+    "address": "0xD1",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "counter_pattern_2",
+    "address": "0xD2",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "counter_pattern_3",
+    "address": "0xD3",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "counter_pattern_4",
+    "address": "0xD4",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "counter_pattern_5",
+    "address": "0xD5",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "counter_pattern_6",
+    "address": "0xD6",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "counter_pattern_7",
+    "address": "0xD7",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "counter_trigger_0",
+    "address": "0xD8",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "counter_trigger_1",
+    "address": "0xD9",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "counter_trigger_2",
+    "address": "0xDA",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "counter_trigger_3",
+    "address": "0xDB",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "counter_trigger_4",
+    "address": "0xDC",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "counter_trigger_5",
+    "address": "0xDD",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "counter_trigger_6",
+    "address": "0xDE",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "counter_trigger_7",
+    "address": "0xDF",
+    "operation": "read",
+    "default": "0x0000"
+  },
+  {
+    "name": "pattern_0",
+    "address": "0xE0",
+    "operation": "read/write",
+    "default": "0x00FF"
+  },
+  {
+    "name": "pattern_1",
+    "address": "0xE1",
+    "operation": "read/write",
+    "default": "0x00FF"
+  },
+  {
+    "name": "pattern_2",
+    "address": "0xE2",
+    "operation": "read/write",
+    "default": "0x00FF"
+  },
+  {
+    "name": "pattern_3",
+    "address": "0xE3",
+    "operation": "read/write",
+    "default": "0x00FF"
+  },
+  {
+    "name": "pattern_4",
+    "address": "0xE4",
+    "operation": "read/write",
+    "default": "0x00FF"
+  },
+  {
+    "name": "pattern_5",
+    "address": "0xE5",
+    "operation": "read/write",
+    "default": "0x00FF"
+  },
+  {
+    "name": "pattern_6",
+    "address": "0xE6",
+    "operation": "read/write",
+    "default": "0x00FF"
+  },
+  {
+    "name": "pattern_7",
+    "address": "0xE7",
+    "operation": "read/write",
+    "default": "0x00FF"
+  },
+  {
+    "name": "debug_1",
+    "address": "0xF1",
+    "operation": "read",
+    "default": ""
+  },
+  {
+    "name": "debug_2",
+    "address": "0xF2",
+    "operation": "read",
+    "default": ""
+  },
+  {
+    "name": "debug",
+    "address": "0xFF",
+    "operation": "read",
+    "default": ""
+  }
+]
