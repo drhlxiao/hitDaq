@@ -25,9 +25,11 @@ class Archive(object):
     def dump(self, force_dump=False, create_new=True):
         if not self.fp:
             return
-        if len(self.buffer)==0:
-            self.fp.close()
-            return
+        if force_dump:
+            if len(self.buffer)==0:
+                self.fp.close()
+                return
+        print('buffer size:', len(self.buffer))
         for item in self.buffer:
             stream=item[0]+','
             if isinstance(item[1], list):
@@ -41,7 +43,6 @@ class Archive(object):
             self.current_buffer_size=0
             if self.file_size_written>self.max_file_size or force_dump:
                 self.fp.close()
-                self.file_size_written=0
                 
                 self.fp=None
                 if create_new:
@@ -106,6 +107,7 @@ class Archive(object):
         self.filename=self.get_filename(self.folder, self.prefix)
         try:
             self.fp=open(self.filename,'w')
+            self.file_size_written=0
             return True
         except Exception as e:
             return False

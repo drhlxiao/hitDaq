@@ -149,8 +149,8 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
 
 
     def enable_archiving(self):
-        inputs=(self.archiveFolderInput.text(),self.archiveFilenamePrefixInput.text(),
-                    self.archiveBufferSizeInput.value(),self.archiveFilesizeMaxInput.value())
+        inputs=(self.archiveFolderInput,self.archiveFilenamePrefixInput,
+                    self.archiveBufferSizeInput,self.archiveFilesizeMaxInput)
 
         if not self.archiving_enabled:
             self.archive_manager.start(self.archiveFolderInput.text(),self.archiveFilenamePrefixInput.text(),
