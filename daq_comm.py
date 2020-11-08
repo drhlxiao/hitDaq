@@ -5,6 +5,7 @@ import random
 import time
 import config
 import matplotlib.pyplot as plt
+import archive
 
 from PyQt5 import  QtWidgets, QtCore, QtGui
 
@@ -35,19 +36,30 @@ status_bits = ["spi_master_busy       ",
         "srout                 ",
         "plllck                "]
 
+def parse_int(x):
+    if isinstance(x, str):
+        if '0x' in x:
+            return int(x,16)
+        else:
+            return int(x)
+    return x
 
 class DaqComm(object):
 
-    def __init__(self, parent):
+    def __init__(self ):
         super(DaqComm, self).__init__()
         self.address = '10.42.0.130'
         self.port = 1002
         self.server_address = None
-        self.parent=parent
+        #self.parent=parent
         self.s=None
         self.hw_ready=False
-        self.telcommand_counter=0
+        self.telecommand_counter=0
         self.telemetry_counter=0
+        self.archive_manager=archive.Archive()
+
+        #print('parent')
+        #print(parent)
 
     def connect_host(self,address,port):
         self.address=address
@@ -64,15 +76,9 @@ class DaqComm(object):
         return False
     def close_all(self):
         self.s.close()
-    def error(self,*args, **kargs):
-        return self.parent.error(*args, **kargs)
-    def info(self,*args, **kargs):
-        return self.parent.info(*args, **kargs)
-    def warn(self,*args, **kargs):
-        return self.parent.warning(*args, **kargs)
-
-
+  
     def read(self,register):  
+        self.telemetry_counter+=1
         a = (cmd_read & 0xF0) + ((register >> 4) & 0x0F)
         b = ((register << 4) & 0xF0) + (cmd_read & 0x0F)
         message = [a, b, 0xFF, 0xFF, 0xFF, 0xFF]
@@ -85,12 +91,14 @@ class DaqComm(object):
                 data[amount_received] = self.s.recv(1)
                 amount_received += 1
             value = int.from_bytes(data[4], byteorder='big') * 256 + int.from_bytes(data[5], byteorder='big')
+            self.archive_manager.append(['read',register, value])
             return value
         except Exception as e:
             self.error(str(e))
         return None
 
     def read_burst(self, register):  
+        self.telemetry_counter+=1
         a = (cmd_read & 0xF0) + ((register >> 4) & 0x0F)
         b = ((register << 4) & 0xF0) + (cmd_read & 0x0F)
         message = [a, b, 0xFF, 0xFF]
@@ -110,7 +118,7 @@ class DaqComm(object):
             value = []
             for word in range(burst_length):
                 value.append( int.from_bytes(data[4+(word*2)], byteorder='big') * 256 + int.from_bytes(data[5+(word*2)], byteorder='big') )
-              #print("Word %s = %s" %(word, hex(value[word])))
+            self.archive_manager.append(['burst_read',register,value])
             return value
         except Exception as e:
             raise
@@ -125,6 +133,7 @@ class DaqComm(object):
 
 
     def read_register(self,register):  
+        register=parse_int(register)
         print('reading ', register)
         value = self.read(register)
         print('result:',value)
@@ -183,11 +192,13 @@ class DaqComm(object):
                 self.info("register: %s read = %s" %(hex(register), hex(value)))  
 
     def write(self,register, value):  
+        self.telecommand_counter+=1
         a = (cmd_write & 0xF0) + ((register >> 4) & 0x0F)
         b = ((register << 4) & 0xF0) + (cmd_write & 0x0F)
         c = (value & 0xFF00) >> 8
         d = (value & 0x00FF)
         message = [a, b, c, d, 0xFF, 0xFF]
+        self.archive_manager.append(['write',register, value])
         try:
             self.s.sendall(bytes(message))
             amount_received = 0
@@ -202,6 +213,8 @@ class DaqComm(object):
         return False
 
     def write_register(self,register, value, desc=''):  
+        register=parse_int(register)
+        value=parse_int(value)
         msg=''
         if desc:
             msg=(" {:50} (Register: {}, value: {})".format(desc, hex(register), value))

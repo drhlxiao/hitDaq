@@ -85,41 +85,161 @@ class Worker(QRunnable):
 class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
     def __init__(self, MainWindow):
         super(Ui, self).setupUi(MainWindow)
+        super(Ui, self).__init__()
         self.MainWindow = MainWindow
         self.current_folder='.'
         self.dynamic_layouts=[]
         self.dynamic_widgets={}
         self.button_actions={}
         self.is_connected=False
+        self.archiving_enabled=False
+        self.archiving_file=None
+        self.buffer_packets=[]
         button_connections={
                 self.connectBtn: self.ui_connect_host,
-                #self.selectFolderBtn: self.select_folder,
+                self.openScriptButton: self.select_script_file,
+                self.selectArchiveFolderButton: self.select_archive_folder,
                 #self.initBtn:self.init_board,
                 #self.readStatBtn:self.read_status,
                 #self.lastCmdBtn:self.last_command,
+                self.drs4SingleReadButton: self.drs4_single_read_and_plot,
                 self.registerReadButton: self._register_read,
+                self.executeScriptButton: self.execute_script,
                 self.registerWriteButton: self._register_write,
-                self.hkSingleReadBtn:self.single_read,
-                self.hkStartBtn: self.hk_acq_start,
-                self.sciStartDRSBtn:self.sci_acq_start,
-                self.sciStopDRSBtn:self.sci_acq_stop,
-                self.sciTrigDRSBtn:self.sci_single_trigger,
-                self.sciSingReadBtn:self.sci_single_read,
+                self.enableArchingButton: self.enable_archiving, 
+                self.truncateArchivingButton: self.truncate_archiving,
+                self.drs4ContinousReadButton: self.drs4_continous_read,
                 #self.calStartBtn:self.calibration_start,
                 #self.calStopBtn:self.calibration_stop,
                 #self.tempReadBtn:self.read_temperature
                 }
+        actions={self.action_Exit: self.closeEvent,
+
+                }
         for btn, fun in button_connections.items():
             btn.clicked.connect(fun)
+        for action, fun in actions.items():
+            action.triggered.connect(fun)
 
         self.load_register_read_buttons()
         self.load_widgets()
+        self.set_button_status(1, False)
+        self.threadpool = QThreadPool()
+        self.create_sci_chart()
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.on_timeout)
+        self.timer.start(1000)
+        self.drs4_timer = QtCore.QTimer()
+        self.drs4_timer.timeout.connect(self.drs4_single_read_and_plot)
+        self.drs4_timer_running=False
+
+    def closeEvent(self, event):
+        self.archive_manager.stop()
+        self.MainWindow.close()
+
+
+    def select_archive_folder(self):
+        folder=QtWidgets.QFileDialog.getExistingDirectory(None, 'Select working directory')
+        self.archiveFolderInput.setText(folder)
+    def truncate_archiving(self):
+        if self.archiving_enabled:
+            filename=self.archive_manager.truncate()
+            if filename:
+                self.info(f'Archive filename:{filename}')
+
+
+    def enable_archiving(self):
+        inputs=(self.archiveFolderInput.text(),self.archiveFilenamePrefixInput.text(),
+                    self.archiveBufferSizeInput.value(),self.archiveFilesizeMaxInput.value())
+
+        if not self.archiving_enabled:
+            self.archive_manager.start(self.archiveFolderInput.text(),self.archiveFilenamePrefixInput.text(),
+                    self.archiveBufferSizeInput.value(),self.archiveFilesizeMaxInput.value())
+
+            self.currentArchiveFilenameLabel.setText(self.archive_manager.current_filename())
+            self.archiving_enabled=self.archive_manager.is_running()
+            self.enableArchingButton.setText('Disable Archiving' if self.archiving_enabled else 'Enable Archiving')
+            filename=self.archive_manager.current_filename()
+            if filename:
+                self.info(f'Archiving enabled, archive filename:{filename}')
+                for x in inputs:
+                    x.setEnabled(False)
+                    
+
+        else:
+            self.archive_manager.stop()
+            self.archiving_enabled=False
+            self.info('Archiving stopped.')
+            for x in inputs:
+                x.setEnabled(True)
+
+        state='ON' if self.archiving_enabled  else 'OFF'
+        style="background-color:green; color: white;" if self.archiving_enabled  else 'color: rgb(255, 255, 255); background-color: rgb(239, 41, 41);'
+        self.archiveStatusLabel.setText(state)
+        self.archiveStatusLabel.setStyleSheet(style)
+
+    def on_timeout(self):
+        self.packetSentCounterLabel.setText(str(self.telecommand_counter))
+        self.packetReadCounterLabel.setText(str(self.telemetry_counter))
+        self.currentArchiveFilenameLabel.setText(self.archive_manager.current_filename())
+
+
+    def create_sci_chart(self):
+        self.chart = QChart()
+        self.chart.layout().setContentsMargins(0, 0, 0, 0)
+        self.chart.setBackgroundRoundness(0)
+        self.chartLayout= QtWidgets.QHBoxLayout(self.waveformGroupBox)
+        self.chartView = QChartView(self.chart)
+        self.chartLayout.addWidget(self.chartView)
+        self.chartView.setRubberBand(QChartView.RectangleRubberBand)
+        self.chartView.setRenderHint(QtGui.QPainter.Antialiasing)
+        self.axisX = QValueAxis()
+        self.axisX.setTitleText('Time')
+        self.axisY = QValueAxis()
+        self.axisY.setTitleText('ADC value')
+        self.chart.setAxisX(self.axisX)
+        self.chart.setAxisY(self.axisY)
+
+
 
 
         #self=daq_comm.DaqComm(self)
 
-        self.set_button_status(1, False)
-        self.threadpool = QThreadPool()
+    def drs4_single_read_and_plot(self):
+        reg=0x72
+        values=self.read_burst(reg)  
+        self.plot_waveform(values)
+    def drs4_continous_read(self):
+        if self.drs4_timer_running:
+            self.drs4_timer.stop()
+            self.drs4_timer_running=False
+            self.drs4ContinousReadButton.setText('Continuous read')
+        else:
+            update_period=self.waveformUpdatePeriodInput.value()
+            ms=math.floor(update_period *1000)
+            self.drs4_timer.start(ms)
+            self.drs4_timer_running=True
+            self.drs4ContinousReadButton.setText('Stop')
+
+
+
+    def plot_waveform(self,data):
+        if not data:
+            return
+        if self.chart:
+            self.chart.removeAllSeries()
+        self.chart.setTitle('DRS4 waveform')
+        series = QLineSeries()
+        xdata=[i for i in range(len(data))]
+        for x, y in zip(xdata, data):
+            series.append(x, y)
+        self.chart.addSeries(series)
+        series.attachAxis(self.axisX)
+        series.attachAxis(self.axisY)
+
+
+
+
     def _register_read(self):
         add=self.registerAddressInput.text()
         address=0
@@ -134,7 +254,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             self.error('Invalid parameters')
             return
 
-        loc, item=self.info(f'Reading register {name} (addr {address})',color='darkYello')
+        loc, item=self.info(f'Reading register {name} (addr {address})',color='darkYellow')
         value=self.read_register(address)
         if value is not None:
             self.info(f'{name} raw value {value}',color='darkCyan')
@@ -169,10 +289,10 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
     
     def set_button_status(self, level, status):
         button_groups={
-                0: [],
-                1: [self.hkSingleReadBtn, self.hkStartBtn, self.sciSingReadBtn, 
-                    self.sciStartDRSBtn, self.sciStopDRSBtn,
-                    self.sciTrigDRSBtn, self.calStopBtn, self.calStartBtn]}
+                0: [self.registerReadButton, self.registerWriteButton, self.executeScriptButton, 
+                    self.drs4SingleReadButton,self.drs4ContinousReadButton, self.drs4ContinousReadButton,
+                    ],
+                1: [  ]}
         if level>=0:
             for btn in button_groups[0]:
                 btn.setEnabled(status)
@@ -286,7 +406,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             
 
     def _sequence_read(self, seq, args):
-        loc, item=self.info(seq[2],color='darkYello')
+        loc, item=self.info(seq[2],color='darkYellow')
         value=self.read_register(seq[1][0])
         if value is not None:
             self.info(f'Result raw value: {value}',color='darkCyan')
@@ -363,7 +483,6 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
                     pass
             for seq in sequence:
                 func_name=seq[0][0]
-                print('function name:',func_name)
                 func= getattr(self, func_name)
                 if func:
                     result=func(seq, args=args)
@@ -391,6 +510,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             btn.setObjectName(item['name'])
             btn.setText(item['name'])
             btn.setToolTip(f"{item['name']}, address: {item['address']}")
+            btn.setStatusTip(f"{item['name']}, address: {item['address']}")
             self.dynamic_widgets[item['name']]=btn
             row=index//row_cols
             col=index%row_cols
@@ -463,7 +583,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             res=self.get_temperatures()
             for msg in res: 
                 self.info(msg)
-        self.async_run(_read_temperature)
+        _read_temperature()
 
     def ui_connect_host(self):
         def _connect_host():
@@ -491,19 +611,59 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             self.is_connected=False
             self.connectBtn.setStyleSheet("")
             self.set_button_status(1,False)
-        self.async_run(_connect_host)
+        _connect_host()
         
 
 
-    def select_folder(self):
-        self.current_folder= str(QtWidgets.QFileDialog.getExistingDirectory())
-        self.folderLabel.setText(self.current_folder)
+    def select_script_file(self):
+        try:
+            fname = QtWidgets.QFileDialog.getOpenFileName(None, 'Open script file', 
+             '.',"script files (*.txt *.csv)")[0]
+            self.scriptFilenameInput.setText(fname)
+        except Exception as e:
+            pass
+
+    def execute_script(self):
+        fname=self.scriptFilenameInput.text()
+        if not fname:
+            self.error('Select a script file first!')
+            return
+        self.info(f'Starting to execute {fname} ...')
+        with open(fname) as fs:
+            lines=fs.readlines()
+            commands=[]
+            for l in lines:
+                line=l.strip()
+                if line.startswith('#') or not line:
+                    continue
+                if '#' in line:
+                    line=line.split('#')[0]
+                cmd=line.split()
+
+                if len(cmd)>=2:
+                    commands.append(cmd)
+        def _execute_script(cmds):
+            for cmd in cmds:
+                if cmd[0]=='wait':
+                    loc, item=self.info(f'Waiting for {cmd[1]} s',color='darkYellow')
+                    time.sleep(int(cmd[1]))
+                elif cmd[0]=='read':
+                    msg='Reading register {}'.format(cmd[1])
+                    loc, item=self.info(msg,color='darkYellow')
+                    value=self.read_register(cmd[1])
+                    if value is not None:
+                        self.info(f'Result raw value: {value}',color='darkCyan')
+                elif cmd[0]=='write':
+                    msg='Writing register {} {}'.format(cmd[1], cmd[2])
+                    loc, item=self.info(msg,color='darkYellow')
+                    self.write_register(cmd[1], cmd[2], '')
+        try:
+            _execute_script(commands)
+        except Exception as e:
+            self.erro(str(e))
 
 
 
-    #def read_status(self):
-    #    self.info('Reading ...', 0)
-    #    self.async_run(self.status)
 
     def last_command(self):
         def _last_command():
@@ -516,30 +676,6 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
                 self.info('Return value is None')
         self.async_run(_last_command)
 
-    def single_read(self):
-        self.info('Read single event...', 0)
-        pass
-    def hk_acq_start(self):
-        self.info('Starting hk read...', 0)
-        pass
-    def sci_acq_start(self):
-        self.info('Acq starting...', 0)
-        pass
-    def sci_acq_stop(self):
-        self.info('Stopping acquisition...', 0)
-        pass
-    def sci_single_trigger(self):
-        self.info('single ...', 0)
-        pass
-    def sci_single_read(self):
-        self.info('single read ...', 0)
-        pass
-    def calibration_start(self):
-        self.info('Starting calibration...', 0)
-        pass
-    def calibration_stop(self):
-        self.info('Stopping calibration...', 0)
-        pass
     def register_read(self, reg):
         def read_reg(reg_add):
             self.info(f'Reading  {hex(reg)} ...')
