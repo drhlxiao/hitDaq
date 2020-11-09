@@ -14,7 +14,7 @@ from functools import partial
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QThread, pyqtSignal, QTimer, QObject, QRunnable, QThreadPool
-from PyQt5.QtChart import QChart, QChartView, QLineSeries, QValueAxis
+import pyqtgraph as pg
 import window
 import daq_comm
 import config
@@ -22,22 +22,6 @@ import config
 
 class WorkerSignals(QObject):
     '''
-    Defines the signals available from a running worker thread.
-
-    Supported signals are:
-
-    finished
-        No data
-
-    error
-        `tuple` (exctype, value, traceback.format_exc() )
-
-    result
-        `object` data returned from processing, anything
-
-    progress
-        `int` indicating % progress 
-
     '''
     finished = pyqtSignal()
     error = pyqtSignal(str)
@@ -283,22 +267,17 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             self.archive_manager.current_filename())
 
     def create_sci_chart(self):
-        self.chart = QChart()
-        self.chart.layout().setContentsMargins(0, 0, 0, 0)
-        self.chart.setBackgroundRoundness(0)
+        pg.setConfigOption('leftButtonPan', False)
+        pen=pg.mkPen('g', width=1)
+        self.view= pg.PlotWidget()
         self.chartLayout = QtWidgets.QHBoxLayout(self.waveformGroupBox)
-        self.chartView = QChartView(self.chart)
-        self.chartLayout.addWidget(self.chartView)
-        self.chartView.setRubberBand(QChartView.RectangleRubberBand)
-        self.chartView.setRenderHint(QtGui.QPainter.Antialiasing)
-        self.axisX = QValueAxis()
-        self.axisX.setTitleText('Time')
-        self.axisY = QValueAxis()
-        self.axisY.setTitleText('ADC value')
-        self.chart.setAxisX(self.axisX)
-        self.chart.setAxisY(self.axisY)
-
-        # self=daq_comm.DaqComm(self)
+        self.chartLayout.addWidget(self.view)
+        self.waveform=self.view.plot(pen=pen)
+        self.view.setLabel('left', "ADC", units='')
+        self.view.setLabel('bottom', "Time", units='')
+        self.view.showGrid(x=True, y=True)
+        self.view.showAxis('top')
+        self.view.showAxis('right')
 
     def drs4_single_read_and_plot(self):
         reg = 0x72
@@ -320,16 +299,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
     def plot_waveform(self, data):
         if not data:
             return
-        if self.chart:
-            self.chart.removeAllSeries()
-        self.chart.setTitle('DRS4 waveform')
-        series = QLineSeries()
-        xdata = [i for i in range(len(data))]
-        for x, y in zip(xdata, data):
-            series.append(x, y)
-        self.chart.addSeries(series)
-        series.attachAxis(self.axisX)
-        series.attachAxis(self.axisY)
+        self.waveform.setData(data) 
 
     def _register_read(self):
         add = self.registerAddressInput.text()
@@ -500,10 +470,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
 
     def _sequence_write(self, seq, args):
         value = 0
-        #print('write:')
-        #print(seq)
         address, origin_value = seq[1]
-        # args=seq['args']
         if isinstance(origin_value, str) and origin_value in args:
             value = args[origin_value]
         elif isinstance(origin_value, int):

@@ -24,7 +24,7 @@ On windows
 #### Install dependencies
 Open the terminal, run:
 ```cmd
-   pip3 install numpy PyQt5 pyqtchart 
+   pip3 install numpy PyQt5 pyqtgraph
 ````
 If pip3 is not found, please try pip
 

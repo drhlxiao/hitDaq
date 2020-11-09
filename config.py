@@ -4,7 +4,7 @@
  configuration file
 '''
 release_date = 'Nov. 09, 2020'
-version = 'v1.0'
+version = 'v1.2'
 
 commands = {
         'basicOperationGroup':
