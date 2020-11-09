@@ -38,6 +38,8 @@ status_bits = ["spi_master_busy       ",
 
 def parse_int(x):
     if isinstance(x, str):
+        if x=='0x':
+            return 0
         if '0x' in x:
             return int(x, 16)
         else:
@@ -138,9 +140,9 @@ class DaqComm(object):
 
     def read_register(self, register):
         register = parse_int(register)
-        print('reading ', register)
+        #print('reading ', register)
         value = self.read(register)
-        print('result:', value)
+        #print('result:', value)
         return value
 
     def decode_status(self, inputs_tuple, value):
@@ -174,8 +176,6 @@ class DaqComm(object):
 
     def _decode_temp(self, inputs,  readout):
         # reg=inputs[0]
-        print('here')
-        print(inputs, readout)
         return self.decode_temp(readout)
 
     def get_temperatures(self):
@@ -224,14 +224,13 @@ class DaqComm(object):
         value = parse_int(value)
         msg = ''
         if desc:
-            msg = (" {:50} (Register: {}, value: {})".format(
-                desc, hex(register), value))
+            msg = (" {:50} (Register: {}, value: {} [{}])".format(
+                desc, hex(register), value, hex(value)))
         else:
             msg = ("Writing register: {}, value: {}".format(
                 hex(register), hex(value)))
 
         loc, item = self.info(msg)
-        print('writting', register, value)
         status = self.write(register, value)
         if loc == 'log':
             color = 'green' if status else 'red'

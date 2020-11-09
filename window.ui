@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1369</width>
+    <width>1322</width>
     <height>950</height>
    </rect>
   </property>
@@ -164,7 +164,7 @@
             <property name="minimumSize">
              <size>
               <width>0</width>
-              <height>250</height>
+              <height>120</height>
              </size>
             </property>
             <property name="font">
@@ -175,6 +175,136 @@
             <property name="title">
              <string>Readout</string>
             </property>
+            <layout class="QGridLayout" name="gridLayout_4">
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_14">
+               <property name="text">
+                <string>Readout mode:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QComboBox" name="readoutModeComboBox">
+               <item>
+                <property name="text">
+                 <string>Full</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>ROI</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Smart</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item row="0" column="2" colspan="6">
+              <spacer name="horizontalSpacer_10">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>926</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="readoutLabel1">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>Readout channels:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLineEdit" name="readoutInput1">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="2">
+              <widget class="QLabel" name="readoutLabel2">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>delay</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="3">
+              <widget class="QLineEdit" name="readoutInput2">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="4">
+              <widget class="QLabel" name="readoutLabel3">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>samples</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="5">
+              <widget class="QLineEdit" name="readoutInput3">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="6">
+              <widget class="QPushButton" name="readoutConfigButton">
+               <property name="text">
+                <string>Set</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="7">
+              <spacer name="horizontalSpacer_11">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>387</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
            </widget>
           </item>
           <item>
@@ -858,7 +988,7 @@ background-color: rgb(239, 41, 41);</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1369</width>
+     <width>1322</width>
      <height>26</height>
     </rect>
    </property>

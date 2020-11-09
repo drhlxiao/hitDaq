@@ -101,6 +101,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             self.enableArchingButton: self.enable_archiving,
             self.truncateArchivingButton: self.truncate_archiving,
             self.drs4ContinousReadButton: self.drs4_continous_read,
+            self.readoutConfigButton: self.config_readout_mode,
             # self.calStartBtn:self.calibration_start,
             # self.calStopBtn:self.calibration_stop,
             # self.tempReadBtn:self.read_temperature
@@ -113,6 +114,9 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             btn.clicked.connect(fun)
         for action, fun in actions.items():
             action.triggered.connect(fun)
+        self.readoutModeComboBox.currentIndexChanged.connect(self.readout_mode_change)
+        self.registerAddressInput.textChanged.connect(self.update_register_info)
+        self.register_names={}
 
         self.load_register_read_buttons()
         self.load_widgets()
@@ -127,6 +131,13 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         self.drs4_timer_running = False
         self.settings = QtCore.QSettings('LGR', 'daq')
         self.load_settings()
+        self.update_readout_widgets(1)
+
+    def update_register_info(self):
+        addr=self.registerAddressInput.text()
+        if addr:
+            name=self.register_names.get(str(daq_comm.parse_int(addr)),'Not defined register')
+            self.registerNameLabel.setText(name)
 
     def load_settings(self):
         host = self.settings.value('host', [])
@@ -143,6 +154,35 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         script_name= self.settings.value('script', [])
         if script_name:
             self.scriptFilenameInput.setText(script_name)
+    def update_readout_widgets(self, mode):
+        conf=config.readouts
+        for iw, wname in enumerate(conf['widgets']):
+            widget= self.MainWindow.findChild(QtWidgets.QWidget, wname)
+            visible=conf['visible'][mode][iw]
+            name=conf['name'][mode][iw]
+            widget.setHidden(not visible)
+            widget.setText(name)
+            
+    def readout_mode_change(self):
+        index=self.readoutModeComboBox.currentIndex()
+        self.update_readout_widgets(index)
+    def config_readout_mode(self):
+        index=self.readoutModeComboBox.currentIndex()
+        readout_mode=[3, 1,2]
+        self.write_register(0x80, readout_mode[index])
+        inputs=[self.readoutInput1.text(), 
+                self.readoutInput2.text(), self.readoutInput3.text()] 
+        self.write_register(0x81, daq_comm.parse_int(inputs[0]))
+        if index>0:
+            self.write_register(0x83, daq_comm.parse_int(inputs[2]))
+
+        if index==1:
+            self.write_register(0x82, daq_comm.parse_int(inputs[1]))
+        elif index==2:
+            self.write_register(0x84, daq_comm.parse_int(inputs[1]))
+
+
+
 
     def closeEvent(self, event):
         self.archive_manager.stop()
@@ -308,7 +348,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
 
     def set_button_status(self, level, status):
         button_groups = {
-            0: [self.registerReadButton, self.registerWriteButton, self.executeScriptButton,
+            0: [self.registerReadButton, self.registerWriteButton, self.executeScriptButton, self.readoutConfigButton,
                 self.drs4SingleReadButton, self.drs4ContinousReadButton, self.drs4ContinousReadButton,
                 ],
             1: []}
@@ -333,7 +373,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
 
     def load_widgets(self):
         self.create_groups('basicOperationGroup')
-        self.create_groups('readoutsGroup')
+        #self.create_groups('readoutsGroup')
         self.create_groups('readRegisterGroup')
         # self.create_groups('writeRegisterGroup')
         # self.create_groups('readWriteRegisterGroup')
@@ -431,8 +471,8 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
 
     def _sequence_write(self, seq, args):
         value = 0
-        print('write:')
-        print(seq)
+        #print('write:')
+        #print(seq)
         address, origin_value = seq[1]
         # args=seq['args']
         if isinstance(origin_value, str) and origin_value in args:
@@ -514,6 +554,9 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         rowspan = 1
         colspan = 1
         for item in register_buttons:
+            addr=str(daq_comm.parse_int(item['address']))
+            self.register_names[addr]=item['name']
+
             if 'write' not in item['operation']:
                 continue
             btn = QtWidgets.QPushButton(self.registerListGroup)
