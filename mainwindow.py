@@ -102,6 +102,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             self.truncateArchivingButton: self.truncate_archiving,
             self.drs4ContinousReadButton: self.drs4_continous_read,
             self.readoutConfigButton: self.config_readout_mode,
+            self.readStatusButton: self.read_and_show_status,
             # self.calStartBtn:self.calibration_start,
             # self.calStopBtn:self.calibration_stop,
             # self.tempReadBtn:self.read_temperature
@@ -132,12 +133,39 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         self.settings = QtCore.QSettings('LGR', 'daq')
         self.load_settings()
         self.update_readout_widgets(1)
+        self.statusTreeWidget.setColumnWidth(0,50)
+        self.statusTreeWidget.setColumnWidth(1,300)
+        self.readoutInput2.setHidden(True)
+        self.readoutInput3.setHidden(True)
+        self.readoutLabel2.setHidden(True)
+        self.readoutLabel3.setHidden(True)
 
     def update_register_info(self):
         addr=self.registerAddressInput.text()
         if addr:
             name=self.register_names.get(str(daq_comm.parse_int(addr)),'Not defined register')
             self.registerNameLabel.setText(name)
+    def read_and_show_status(self):
+        value = self.read_register(0x02)
+        self.statusTreeWidget.clear()
+        true_color='#228b22'
+        false_color='#b22222'
+        self.statusUpdateInfoLabel.setText('Last updated at {} '.format(datetime.now().isoformat()))
+        
+        if not value:
+            self.error('Invalid status value!')
+            return
+        for bit in range(16):
+            root = QtWidgets.QTreeWidgetItem(self.statusTreeWidget)
+            root.setText(0, str(bit))
+            root.setText(1, daq_comm.status_bits[bit])
+            s=((value >> bit) & 1) == 1
+            root.setText(2, 'True' if s else 'False')
+            color=true_color if s else false_color
+            root.setForeground(0, QtGui.QBrush(QtGui.QColor(color)))
+            root.setForeground(1, QtGui.QBrush(QtGui.QColor(color)))
+            root.setForeground(2, QtGui.QBrush(QtGui.QColor(color)))
+
 
     def load_settings(self):
         host = self.settings.value('host', [])
@@ -349,7 +377,8 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
     def set_button_status(self, level, status):
         button_groups = {
             0: [self.registerReadButton, self.registerWriteButton, self.executeScriptButton, self.readoutConfigButton,
-                self.drs4SingleReadButton, self.drs4ContinousReadButton, self.drs4ContinousReadButton,
+                self.drs4SingleReadButton, self.drs4ContinousReadButton, self.drs4ContinousReadButton, self.readStatusButton,
+
                 ],
             1: []}
         if level >= 0:
