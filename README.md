@@ -26,6 +26,7 @@ Open the terminal, run:
 ```cmd
    pip3 install numpy PyQt5 pyqtchart 
 ````
+If pip3 is not found, please try pip
 
 #### Run the DAQ
 
@@ -33,11 +34,14 @@ Open the terminal, run:
 ```sh
 	cd HIT_daq
 	chmod 755 daq
-	./daq
+	sh daq.sh
 ```
 - On Windows
 ``` cmd
 	cd HIT_daq
-	python3 daq
+	daq.bat
 ```
+Note that the python program name may be called python3 on your window OS. 
+If there are  "ModuleNotFoundError: No module named xxx", please install the missing modules
+by using pip3 (or pip)
   
