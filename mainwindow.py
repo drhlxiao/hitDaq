@@ -187,8 +187,6 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             self.currentArchiveFilenameLabel.setText(
                 self.archive_manager.current_filename())
             self.archiving_enabled = self.archive_manager.is_running()
-            self.enableArchingButton.setText(
-                'Disable Archiving' if self.archiving_enabled else 'Enable Archiving')
             filename = self.archive_manager.current_filename()
             if filename:
                 self.info(f'Archiving enabled, archive filename:{filename}')
@@ -207,6 +205,8 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         self.archiveStatusLabel.setText(state)
         self.truncateArchivingButton.setEnabled(self.archiving_enabled)
         self.archiveStatusLabel.setStyleSheet(style)
+        self.enableArchingButton.setText(
+            'Disable Archiving' if self.archiving_enabled else 'Enable Archiving')
 
     def on_timeout(self):
         self.packetSentCounterLabel.setText(str(self.telecommand_counter))
