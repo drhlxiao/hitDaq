@@ -8,8 +8,8 @@ import pprint
 import socket
 import signal
 import math
+import queue
 from datetime import datetime
-import numpy as np
 from functools import partial
 
 from PyQt5 import QtWidgets, QtCore, QtGui
@@ -19,6 +19,7 @@ import window
 import daq_comm
 import config
 
+burst_read_fifo_length=256
 
 class WorkerSignals(QObject):
     '''
@@ -71,6 +72,8 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         self.archiving_enabled = False
         self.archiving_file = None
         self.buffer_packets = []
+        self.burst_read=[]
+        self.burst_fifo= queue.Queue()
         button_connections = {
             self.connectBtn: self.ui_connect_host,
             self.openScriptButton: self.select_script_file,
@@ -282,7 +285,36 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
     def drs4_single_read_and_plot(self):
         reg = 0x72
         values = self.read_burst(reg)
-        self.plot_waveform(values)
+        self.burst_fifo.put(values)
+        length=self.burst_fifo.qsize()
+        waveform={'time':0, 'data':[], 'size':0}
+        
+        try:
+            i=0
+            while i<length:
+                timestamp=0
+                sample=self.burst_fifo.get(False)
+                i+=1
+                if sample==0xFFFF:
+                    timestamp+=self.burst_fifo.get(False)*256
+                    timestamp+=self.burst_fifo.get(False)
+                    i+=2
+                    waveform['time']=timestamp
+                elif sample & 0x8000 == 0x1000:
+                    if waveform['size']>0:
+                        self.plot_waveform(waveform)
+                    waveform['size']=0
+                    waveform['data']=[sample]
+                else:
+                    waveform['data'].append(sample)
+        except queue.Empty:
+            pass
+
+
+
+
+
+
 
     def drs4_continous_read(self):
         if self.drs4_timer_running:
@@ -296,10 +328,9 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             self.drs4_timer_running = True
             self.drs4ContinousReadButton.setText('Stop')
 
-    def plot_waveform(self, data):
-        if not data:
-            return
-        self.waveform.setData(data) 
+    def plot_waveform(self, waveform):
+        if waveform['size']>0:
+            self.waveform.setData(waveform['data']) 
 
     def _register_read(self):
         add = self.registerAddressInput.text()
