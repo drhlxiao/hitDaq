@@ -323,7 +323,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
                 else:
                     if channel_id not in waveform_data['data']:
                         waveform_data['data'][channel_id]=[sample]
-                        self.warn(f'Invalid detector channel: {channel_id}, should be 1-9')
+                        self.warning(f'Invalid detector channel: {channel_id}, should be 1-9')
                     else: 
                         waveform_data['data'][channel_id].append(sample)
         except queue.Empty:
@@ -678,7 +678,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         return self.show_message(msg, where, color, timestamp)
 
     def warning(self, msg, where=1):
-        return self.show_message(msg, where, 'yellow')
+        return self.show_message(msg, where, 'red')
 
     def show_message(self, msg, where=0, color='darkGray', timestamp=True):
         if where != 1:
