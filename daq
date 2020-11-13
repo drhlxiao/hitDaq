@@ -5,6 +5,7 @@ import sys
 import signal
 from PyQt5 import  QtWidgets, QtCore, QtGui
 from mainwindow import Ui
+import style
 
 def main():
     filename = None
@@ -14,6 +15,7 @@ def main():
     MainWindow = QtWidgets.QMainWindow()
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     window = Ui(MainWindow)
+    style.apply(app, theme='default')
     MainWindow.show()
     #if filename:
     #    #window.openFile(filename)

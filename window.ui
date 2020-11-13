@@ -61,8 +61,11 @@
       <property name="autoFillBackground">
        <bool>false</bool>
       </property>
+      <property name="styleSheet">
+       <string notr="true">QTabBar::tab { height: 35px; }</string>
+      </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <property name="iconSize">
        <size>
@@ -582,50 +585,30 @@
         <string>Science</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_3">
-        <item row="0" column="1">
-         <spacer name="horizontalSpacer_9">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="1" column="0" colspan="6">
+        <item row="0" column="0" rowspan="5">
          <widget class="QGroupBox" name="waveformGroupBox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="title">
-           <string>Waveform</string>
+           <string>DRS4 waveforms</string>
           </property>
          </widget>
         </item>
-        <item row="0" column="5">
-         <spacer name="drs4ControlSpacer">
+        <item row="0" column="1" rowspan="5">
+         <widget class="Line" name="line">
           <property name="orientation">
-           <enum>Qt::Horizontal</enum>
+           <enum>Qt::Vertical</enum>
           </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>400</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
+         </widget>
         </item>
         <item row="0" column="2">
-         <widget class="QLabel" name="label_13">
-          <property name="text">
-           <string>Update period(s)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0">
          <widget class="QPushButton" name="drs4SingleReadButton">
           <property name="text">
-           <string>Single-shot read</string>
+           <string>Single</string>
           </property>
          </widget>
         </item>
@@ -639,7 +622,7 @@
           </property>
           <property name="minimumSize">
            <size>
-            <width>200</width>
+            <width>100</width>
             <height>0</height>
            </size>
           </property>
@@ -650,11 +633,18 @@
            </size>
           </property>
           <property name="text">
-           <string>Continuous read</string>
+           <string>Run</string>
           </property>
          </widget>
         </item>
-        <item row="0" column="3">
+        <item row="1" column="2" colspan="2">
+         <widget class="QLabel" name="label_13">
+          <property name="text">
+           <string>Refresh(s)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="4">
          <widget class="QDoubleSpinBox" name="waveformUpdatePeriodInput">
           <property name="minimum">
            <double>0.100000000000000</double>
@@ -666,6 +656,123 @@
            <double>0.500000000000000</double>
           </property>
          </widget>
+        </item>
+        <item row="2" column="2" colspan="2">
+         <widget class="QLabel" name="label_15">
+          <property name="text">
+           <string>Filter:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="2" colspan="3">
+         <widget class="QListWidget" name="channelListWidget">
+          <property name="minimumSize">
+           <size>
+            <width>200</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>220</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <item>
+           <property name="text">
+            <string>Channel 1</string>
+           </property>
+           <property name="checkState">
+            <enum>Checked</enum>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Channel 2</string>
+           </property>
+           <property name="checkState">
+            <enum>Checked</enum>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Channel 3</string>
+           </property>
+           <property name="checkState">
+            <enum>Checked</enum>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Channel 4</string>
+           </property>
+           <property name="checkState">
+            <enum>Checked</enum>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Channel 5</string>
+           </property>
+           <property name="checkState">
+            <enum>Checked</enum>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Channel 6</string>
+           </property>
+           <property name="checkState">
+            <enum>Checked</enum>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Channel 7</string>
+           </property>
+           <property name="checkState">
+            <enum>Checked</enum>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Channel 8</string>
+           </property>
+           <property name="foreground">
+            <brush brushstyle="NoBrush">
+             <color alpha="255">
+              <red>0</red>
+              <green>0</green>
+              <blue>0</blue>
+             </color>
+            </brush>
+           </property>
+           <property name="checkState">
+            <enum>Checked</enum>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Channel 9</string>
+           </property>
+           <property name="checkState">
+            <enum>Checked</enum>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="4" column="3">
+         <spacer name="verticalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>223</height>
+           </size>
+          </property>
+         </spacer>
         </item>
        </layout>
       </widget>
@@ -1088,12 +1195,19 @@ background-color: rgb(239, 41, 41);</string>
     </property>
     <addaction name="actionAbout"/>
    </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <addaction name="actionLogDock"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuSettings"/>
+   <addaction name="menuView"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <widget class="QDockWidget" name="dockWidget_3">
+  <widget class="QDockWidget" name="logDockWidget">
    <property name="sizePolicy">
     <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
      <horstretch>0</horstretch>
@@ -1102,7 +1216,7 @@ background-color: rgb(239, 41, 41);</string>
    </property>
    <property name="minimumSize">
     <size>
-     <width>97</width>
+     <width>120</width>
      <height>200</height>
     </size>
    </property>
@@ -1110,12 +1224,15 @@ background-color: rgb(239, 41, 41);</string>
     <bool>false</bool>
    </property>
    <property name="features">
-    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
+    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetFloatable</set>
    </property>
    <attribute name="dockWidgetArea">
     <number>8</number>
    </attribute>
-   <widget class="QWidget" name="dockWidgetContents_3">
+   <widget class="QWidget" name="logDock">
+    <property name="autoFillBackground">
+     <bool>false</bool>
+    </property>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <property name="spacing">
       <number>2</number>
@@ -1165,6 +1282,17 @@ background-color: rgb(239, 41, 41);</string>
   <action name="actionAbout">
    <property name="text">
     <string>&amp;About</string>
+   </property>
+  </action>
+  <action name="actionLogDock">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Log docker</string>
    </property>
   </action>
  </widget>

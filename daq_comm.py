@@ -126,6 +126,7 @@ class DaqComm(object):
                 value.append(int.from_bytes(
                     data[4+(word*2)], byteorder='big') * 256 + int.from_bytes(data[5+(word*2)], byteorder='big'))
             self.archive_manager.append(['burst_read', register, value])
+            #print(value)
             return value
         except Exception as e:
             raise

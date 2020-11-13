@@ -105,7 +105,13 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         self.readoutModeComboBox.currentIndexChanged.connect(self.readout_mode_change)
         self.registerAddressInput.textChanged.connect(self.update_register_info)
         self.register_names={}
+        #self.actionLogDock.stateChanged.connect(self.update_logger_state)
+        self.logDockWidget.visibilityChanged['bool'].connect(self.actionLogDock.setChecked)
+        self.actionLogDock.toggled['bool'].connect(self.logDockWidget.setVisible)
 
+        self.channelListWidget.itemChanged.connect(self.update_drs4_channel_selection)
+
+        self.waveformUpdatePeriodInput.valueChanged.connect(self.update_read_frequency)
         self.load_register_read_buttons()
         self.load_widgets()
         self.set_button_status(1, False)
@@ -126,7 +132,11 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         self.readoutInput3.setHidden(True)
         self.readoutLabel2.setHidden(True)
         self.readoutLabel3.setHidden(True)
+        self.update_drs4_channel_selection()
 
+    def update_logger_state(self):
+        pass
+        
     def update_register_info(self):
         addr=self.registerAddressInput.text()
         if addr:
@@ -271,11 +281,11 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
 
     def create_sci_chart(self):
         pg.setConfigOption('leftButtonPan', False)
-        pen=pg.mkPen('g', width=1)
         self.view= pg.PlotWidget()
         self.chartLayout = QtWidgets.QHBoxLayout(self.waveformGroupBox)
         self.chartLayout.addWidget(self.view)
-        self.waveform=self.view.plot(pen=pen)
+        colors=[(0,255,0),(44,162,95),(158,188,218),(136,86,167),(253,187,132),(227,74,51),(201,148,199),(221,28,119),(253,174,107)]
+        self.plots={i: self.view.plot(pen=colors[i]) for i in range(9)}
         self.view.setLabel('left', "ADC", units='')
         self.view.setLabel('bottom', "Time", units='')
         self.view.showGrid(x=True, y=True)
@@ -285,9 +295,12 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
     def drs4_single_read_and_plot(self):
         reg = 0x72
         values = self.read_burst(reg)
-        self.burst_fifo.put(values)
+        waveform_data={'time':0, 'data':{}}
+        
+        for val in values:
+            self.burst_fifo.put(val)
         length=self.burst_fifo.qsize()
-        waveform={'time':0, 'data':[], 'size':0}
+        channel_id=0
         
         try:
             i=0
@@ -296,23 +309,46 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
                 sample=self.burst_fifo.get(False)
                 i+=1
                 if sample==0xFFFF:
+                    self.plot_waveform(waveform_data)
+                    channel_id=0
                     timestamp+=self.burst_fifo.get(False)*256
                     timestamp+=self.burst_fifo.get(False)
+                    waveform_data['data']={}
                     i+=2
-                    waveform['time']=timestamp
+                    waveform_data['time']=timestamp
                 elif sample & 0x8000 == 0x1000:
-                    if waveform['size']>0:
-                        self.plot_waveform(waveform)
-                    waveform['size']=0
-                    waveform['data']=[sample]
+                    channel_id+=1
+                    waveform_data['data'][channel_id]=[sample]
+                    self.plot_waveform(waveform_data)
                 else:
-                    waveform['data'].append(sample)
+                    if channel_id not in waveform_data['data']:
+                        waveform_data['data'][channel_id]=[sample]
+                        self.warn(f'Invalid detector channel: {channel_id}, should be 1-9')
+                    else: 
+                        waveform_data['data'][channel_id].append(sample)
         except queue.Empty:
             pass
 
 
+    def update_drs4_channel_selection(self):
+        self.drs4_channel_enabled=[False]*9
+        for index in range(self.channelListWidget.count()):
+            item = self.channelListWidget.item(index)
+            checked=item.checkState() == QtCore.Qt.Checked
+            self.drs4_channel_enabled[index]=checked
+            if not checked:
+                self.plots[index].clear()
 
 
+
+    def update_read_frequency(self):
+        if self.drs4_timer_running:
+            self.drs4_timer.stop()
+            self.drs4_timer_running = False
+            update_period = self.waveformUpdatePeriodInput.value()
+            ms = math.floor(update_period * 1000)
+            self.drs4_timer.start(ms)
+            self.drs4_timer_running = True
 
 
 
@@ -320,7 +356,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         if self.drs4_timer_running:
             self.drs4_timer.stop()
             self.drs4_timer_running = False
-            self.drs4ContinousReadButton.setText('Continuous read')
+            self.drs4ContinousReadButton.setText('Run')
         else:
             update_period = self.waveformUpdatePeriodInput.value()
             ms = math.floor(update_period * 1000)
@@ -328,9 +364,16 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             self.drs4_timer_running = True
             self.drs4ContinousReadButton.setText('Stop')
 
-    def plot_waveform(self, waveform):
-        if waveform['size']>0:
-            self.waveform.setData(waveform['data']) 
+    def plot_waveform(self, waveform_data):
+        if not waveform_data['data']:
+            return
+        for key, value in waveform_data['data'].items():
+            index=key-1
+            if len(value)>0 and index in self.plots:
+                #if self.drs4_channel_enabled[index]:
+                self.plots[index].setData(value)
+
+
 
     def _register_read(self):
         add = self.registerAddressInput.text()
