@@ -20,7 +20,7 @@ import daq_comm
 import config
 
 burst_read_fifo_length=256
-debug=True
+debug=False
 
 class WorkerSignals(QObject):
     '''
