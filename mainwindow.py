@@ -322,7 +322,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
                     self.plot_waveform(waveform_data)
                 else:
                     if channel_id not in waveform_data['data']:
-                        waveform_data['data'][channel_id]=[sample]
+                        #waveform_data['data'][channel_id]=[sample]
                         self.warning(f'Invalid detector channel: {channel_id}, should be 1-9')
                     else: 
                         waveform_data['data'][channel_id].append(sample)
