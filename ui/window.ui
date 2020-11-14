@@ -1224,7 +1224,7 @@ background-color: rgb(239, 41, 41);</string>
     <bool>false</bool>
    </property>
    <property name="features">
-    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetFloatable</set>
+    <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
    <attribute name="dockWidgetArea">
     <number>8</number>

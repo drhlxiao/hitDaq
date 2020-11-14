@@ -20,6 +20,7 @@ import daq_comm
 import config
 
 burst_read_fifo_length=256
+debug=True
 
 class WorkerSignals(QObject):
     '''
@@ -64,6 +65,8 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         super(Ui, self).setupUi(MainWindow)
         super(Ui, self).__init__()
         self.MainWindow = MainWindow
+
+
         self.current_folder = '.'
         self.dynamic_layouts = []
         self.dynamic_widgets = {}
@@ -73,14 +76,36 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         self.archiving_file = None
         self.buffer_packets = []
         self.burst_read=[]
-        self.burst_fifo= queue.Queue()
+
+        self.settings = QtCore.QSettings('LGR', 'daq')
+        self.load_settings()
+
+        self.register_names={}
+
+
+        self.load_widgets()
+        self.load_register_read_buttons()
+        self.set_button_status(1, False)
+        self.threadpool = QThreadPool()
+        self.create_sci_chart()
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.on_timeout)
+        self.timer.start(1000)
+
+
+        self.update_readout_widgets(1)
+        self.statusTreeWidget.setColumnWidth(0,50)
+        self.statusTreeWidget.setColumnWidth(1,300)
+        self.readoutInput2.setHidden(True)
+        self.readoutInput3.setHidden(True)
+        self.readoutLabel2.setHidden(True)
+        self.readoutLabel3.setHidden(True)
+
+        
         button_connections = {
             self.connectBtn: self.ui_connect_host,
             self.openScriptButton: self.select_script_file,
             self.selectArchiveFolderButton: self.select_archive_folder,
-            # self.initBtn:self.init_board,
-            # self.readStatBtn:self.read_status,
-            # self.lastCmdBtn:self.last_command,
             self.drs4SingleReadButton: self.drs4_single_read_and_plot,
             self.registerReadButton: self._register_read,
             self.executeScriptButton: self.execute_script,
@@ -90,9 +115,6 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             self.drs4ContinousReadButton: self.drs4_continous_read,
             self.readoutConfigButton: self.config_readout_mode,
             self.readStatusButton: self.read_and_show_status,
-            # self.calStartBtn:self.calibration_start,
-            # self.calStopBtn:self.calibration_stop,
-            # self.tempReadBtn:self.read_temperature
         }
         actions = {self.action_Exit: self.closeEvent,
                    self.actionAbout: self.about,
@@ -104,35 +126,19 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             action.triggered.connect(fun)
         self.readoutModeComboBox.currentIndexChanged.connect(self.readout_mode_change)
         self.registerAddressInput.textChanged.connect(self.update_register_info)
-        self.register_names={}
         #self.actionLogDock.stateChanged.connect(self.update_logger_state)
         self.logDockWidget.visibilityChanged['bool'].connect(self.actionLogDock.setChecked)
         self.actionLogDock.toggled['bool'].connect(self.logDockWidget.setVisible)
 
         self.channelListWidget.itemChanged.connect(self.update_drs4_channel_selection)
-
         self.waveformUpdatePeriodInput.valueChanged.connect(self.update_read_frequency)
-        self.load_register_read_buttons()
-        self.load_widgets()
-        self.set_button_status(1, False)
-        self.threadpool = QThreadPool()
-        self.create_sci_chart()
-        self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.on_timeout)
-        self.timer.start(1000)
+
         self.drs4_timer = QtCore.QTimer()
         self.drs4_timer.timeout.connect(self.drs4_single_read_and_plot)
         self.drs4_timer_running = False
-        self.settings = QtCore.QSettings('LGR', 'daq')
-        self.load_settings()
-        self.update_readout_widgets(1)
-        self.statusTreeWidget.setColumnWidth(0,50)
-        self.statusTreeWidget.setColumnWidth(1,300)
-        self.readoutInput2.setHidden(True)
-        self.readoutInput3.setHidden(True)
-        self.readoutLabel2.setHidden(True)
-        self.readoutLabel3.setHidden(True)
         self.update_drs4_channel_selection()
+        self.burst_fifo= queue.Queue()
+        self.debug_waveform_phase=0
 
     def update_logger_state(self):
         pass
@@ -285,7 +291,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         self.chartLayout = QtWidgets.QHBoxLayout(self.waveformGroupBox)
         self.chartLayout.addWidget(self.view)
         colors=[(0,255,0),(44,162,95),(158,188,218),(136,86,167),(253,187,132),(227,74,51),(201,148,199),(221,28,119),(253,174,107)]
-        self.plots={i: self.view.plot(pen=colors[i]) for i in range(9)}
+        self.plots={i: self.view.plot(pen=colors[i], name=f'Channel {i+1}') for i in range(9)}
         self.view.setLabel('left', "ADC", units='')
         self.view.setLabel('bottom', "Time", units='')
         self.view.showGrid(x=True, y=True)
@@ -301,6 +307,15 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             self.burst_fifo.put(val)
         length=self.burst_fifo.qsize()
         channel_id=0
+        if debug:
+            for i in range(9):
+                self.debug_waveform_phase+=i*math.pi/20
+                waveform_data['data'][i+1]=[math.sin(j/(2*math.pi)+self.debug_waveform_phase) for j in range(1024)]
+            self.plot_waveform(waveform_data)
+
+            return
+
+
         
         try:
             i=0
@@ -370,8 +385,8 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         for key, value in waveform_data['data'].items():
             index=key-1
             if len(value)>0 and index in self.plots:
-                #if self.drs4_channel_enabled[index]:
-                self.plots[index].setData(value)
+                if self.drs4_channel_enabled[index]:
+                    self.plots[index].setData(value)
 
 
 

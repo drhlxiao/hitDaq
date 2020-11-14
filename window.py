@@ -487,7 +487,7 @@ class Ui_MainWindow(object):
         self.logDockWidget.setSizePolicy(sizePolicy)
         self.logDockWidget.setMinimumSize(QtCore.QSize(120, 200))
         self.logDockWidget.setFloating(False)
-        self.logDockWidget.setFeatures(QtWidgets.QDockWidget.DockWidgetClosable|QtWidgets.QDockWidget.DockWidgetFloatable)
+        self.logDockWidget.setFeatures(QtWidgets.QDockWidget.AllDockWidgetFeatures)
         self.logDockWidget.setObjectName("logDockWidget")
         self.logDock = QtWidgets.QWidget()
         self.logDock.setAutoFillBackground(False)
