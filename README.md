@@ -48,4 +48,4 @@ by using pip3 (or pip)
   
  #### sreenshot
  
- ![alt text](http://url/to/img.png)
+ ![alt text](https://github.com/drhlxiao/LGR_daq/blob/master/docs/drs4_waveform.png?raw=true)
