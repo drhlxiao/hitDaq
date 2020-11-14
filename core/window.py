@@ -624,4 +624,4 @@ class Ui_MainWindow(object):
         self.action_Exit.setText(_translate("MainWindow", "&Exit"))
         self.actionAbout.setText(_translate("MainWindow", "&About"))
         self.actionLogDock.setText(_translate("MainWindow", "Log docker"))
-import mainwindow_rc5_rc
+from core import mainwindow_rc5_rc

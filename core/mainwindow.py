@@ -15,9 +15,9 @@ from functools import partial
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QThread, pyqtSignal, QTimer, QObject, QRunnable, QThreadPool
 import pyqtgraph as pg
-import window
-import daq_comm
-import config
+from core import window
+from core import daq_comm
+from core import config
 
 burst_read_fifo_length=256
 debug=False

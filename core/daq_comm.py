@@ -3,8 +3,8 @@ import sys
 from io import BytesIO
 import random
 import time
-import config
-import archive
+from core import config
+from core import archive
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
