@@ -291,7 +291,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
     
         self.chartLayout = QtWidgets.QHBoxLayout(self.waveformGroupBox)
         self.chartLayout.addWidget(self.view)
-        colors=[(0,255,0),(255,0,0),(0,162,255),(136,86,167),(3,187,132),(227,74,51),(1,108,200),(21,28,119),(253,104,255)]
+        colors=[(0,255,0),(255,0,0),(80,62,255),(136,86,167),(3,187,132),(227,74,51),(1,108,200),(255,158,119),(253,104,255)]
         #self.view.addLegend()
         self.plots={i: self.view.plot(pen=pg.mkPen(color=colors[i] ), 
             name=f'Channel {i+1}') for i in range(9)}
