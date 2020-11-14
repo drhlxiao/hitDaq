@@ -1,4 +1,4 @@
-# HIT data acquisition software
+# Data acquisition software for LGR HIT detector
     
 
 ####  Python3 and pip3 installation
