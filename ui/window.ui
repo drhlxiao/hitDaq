@@ -606,14 +606,14 @@
          </widget>
         </item>
         <item row="0" column="2">
-         <widget class="QPushButton" name="drs4SingleReadButton">
+         <widget class="QPushButton" name="drs4SingleShotButton">
           <property name="text">
            <string>Single</string>
           </property>
          </widget>
         </item>
         <item row="0" column="4">
-         <widget class="QPushButton" name="drs4ContinousReadButton">
+         <widget class="QPushButton" name="drs4RunButton">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -631,6 +631,9 @@
             <width>200</width>
             <height>16777215</height>
            </size>
+          </property>
+          <property name="styleSheet">
+           <string notr="true"/>
           </property>
           <property name="text">
            <string>Run</string>
@@ -1297,7 +1300,7 @@ background-color: rgb(239, 41, 41);</string>
   </action>
  </widget>
  <resources>
-  <include location="resources/mainwindow_rc5.qrc"/>
+  <include location="../resources/mainwindow_rc5.qrc"/>
  </resources>
  <connections/>
 </ui>

@@ -106,13 +106,13 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             self.connectBtn: self.ui_connect_host,
             self.openScriptButton: self.select_script_file,
             self.selectArchiveFolderButton: self.select_archive_folder,
-            self.drs4SingleReadButton: self.drs4_single_read_and_plot,
+            self.drs4SingleShotButton: self.drs4_single_read_and_plot,
             self.registerReadButton: self._register_read,
             self.executeScriptButton: self.execute_script,
             self.registerWriteButton: self._register_write,
             self.enableArchingButton: self.enable_archiving,
             self.truncateArchivingButton: self.truncate_archiving,
-            self.drs4ContinousReadButton: self.drs4_continous_read,
+            self.drs4RunButton: self.drs4_run,
             self.readoutConfigButton: self.config_readout_mode,
             self.readStatusButton: self.read_and_show_status,
         }
@@ -378,17 +378,17 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
 
 
 
-    def drs4_continous_read(self):
+    def drs4_run(self):
         if self.drs4_timer_running:
             self.drs4_timer.stop()
             self.drs4_timer_running = False
-            self.drs4ContinousReadButton.setText('Run')
+            self.drs4RunButton.setText('Run')
         else:
             update_period = self.waveformUpdatePeriodInput.value()
             ms = math.floor(update_period * 1000)
             self.drs4_timer.start(ms)
             self.drs4_timer_running = True
-            self.drs4ContinousReadButton.setText('Stop')
+            self.drs4RunButton.setText('Stop')
 
     def plot_waveform(self, waveform_data):
         if not waveform_data['data']:
@@ -447,7 +447,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
     def set_button_status(self, level, status):
         button_groups = {
             0: [self.registerReadButton, self.registerWriteButton, self.executeScriptButton, self.readoutConfigButton,
-                self.drs4SingleReadButton, self.drs4ContinousReadButton, self.drs4ContinousReadButton, self.readStatusButton,
+                self.drs4SingleShotButton, self.drs4RunButton,  self.readStatusButton,
 
                 ],
             1: []}
