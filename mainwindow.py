@@ -288,10 +288,17 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
     def create_sci_chart(self):
         pg.setConfigOption('leftButtonPan', False)
         self.view= pg.PlotWidget()
+    
         self.chartLayout = QtWidgets.QHBoxLayout(self.waveformGroupBox)
         self.chartLayout.addWidget(self.view)
-        colors=[(0,255,0),(44,162,95),(158,188,218),(136,86,167),(253,187,132),(227,74,51),(201,148,199),(221,28,119),(253,174,107)]
-        self.plots={i: self.view.plot(pen=colors[i], name=f'Channel {i+1}') for i in range(9)}
+        colors=[(0,255,0),(255,0,0),(0,162,255),(136,86,167),(3,187,132),(227,74,51),(1,108,200),(21,28,119),(253,104,255)]
+        #self.view.addLegend()
+        self.plots={i: self.view.plot(pen=pg.mkPen(color=colors[i] ), 
+            name=f'Channel {i+1}') for i in range(9)}
+        #set color for channel selection boxes
+        for index,color in enumerate(colors):
+            self.channelListWidget.item(index).setForeground(QtGui.QColor(color[0],color[1],color[2]))
+
         self.view.setLabel('left', "ADC", units='')
         self.view.setLabel('bottom', "Time", units='')
         self.view.showGrid(x=True, y=True)
@@ -310,7 +317,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         if debug:
             for i in range(9):
                 self.debug_waveform_phase+=i*math.pi/20
-                waveform_data['data'][i+1]=[math.sin(j/(2*math.pi)+self.debug_waveform_phase) for j in range(1024)]
+                waveform_data['data'][i+1]=[math.sin(2*j*math.pi/1024+self.debug_waveform_phase) for j in range(1024)]
             self.plot_waveform(waveform_data)
 
             return
@@ -353,6 +360,10 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             self.drs4_channel_enabled[index]=checked
             if not checked:
                 self.plots[index].clear()
+            #else:
+            #    self.view.addItem(self.plots[index])
+
+            
 
 
 
