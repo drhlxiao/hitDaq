@@ -1,4 +1,4 @@
-# HIT data acquisition software
+# Data acquisition software for LGR HIT detector
     
 
 ####  Python3 and pip3 installation
@@ -45,3 +45,7 @@ Note that the python program name may be called python3 on your window OS.
 If there are  "ModuleNotFoundError: No module named xxx", please install the missing modules
 by using pip3 (or pip)
   
+  
+ #### sreenshot
+ 
+ ![alt text](http://url/to/img.png)
