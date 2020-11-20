@@ -11,10 +11,14 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 cmd_write = 0xFF
 cmd_read = 0x00
 
-addr_sram = 0x60
-addr_sram_inc = 0x61
-addr_sram_burst = 0x6F
-burst_length = 1024
+
+addr_fifo         = 0x70
+addr_fifo_burst   = 0x71
+addr_sram         = 0x60
+addr_sram_inc     = 0x61
+addr_sram_burst   = 0x6F
+burst_length      = 1024
+fifo_burst_length = 1024
 addr_row = 0x62
 addr_column = 0x63
 addr_status = 0x02
@@ -31,8 +35,8 @@ status_bits = ["spi_master_busy       ",
                "dwrite from sequencer ",
                "denable from register ",
                "dwrite from register  ",
-               "wsrout                ",
-               "srout                 ",
+               "fifo empty            ",
+               "fifo full             ",
                "plllck                "]
 
 
@@ -63,6 +67,40 @@ class DaqComm(object):
 
         # print('parent')
         # print(parent)
+    def fifo_write(self, number):
+      for word in range(number):
+          self.write_register(addr_fifo, word+1)
+
+    def fifo_burst_read(self):
+        a = (cmd_read & 0xF0) + ((addr_fifo_burst >> 4) & 0x0F)
+        b = ((addr_fifo_burst << 4) & 0xF0) + (cmd_read & 0x0F)
+        message = [a, b, 0xFF, 0xFF]
+        data = [0x00, 0x00, 0x00, 0x00]
+        for word in range(fifo_burst_length):
+            message.append(0xFF)
+            message.append(0xFF)
+            data.append(0x00)
+            data.append(0x00)
+        try:
+            self.s.sendall(bytes(message))
+            amount_received = 0
+            amount_expected = len(message)
+            while amount_received < amount_expected:
+                data[amount_received] = self.s.recv(1)
+                amount_received += 1
+            value = []
+            for word in range(fifo_burst_length):
+                value.append( int.from_bytes(data[4+(word*2)], byteorder='big') * 256 + int.from_bytes(data[5+(word*2)], byteorder='big') )
+            return value
+        except Exception as e:
+            self.error(e)
+            return []
+
+
+
+
+
+
 
     def connect_host(self, address, port):
         self.address = address

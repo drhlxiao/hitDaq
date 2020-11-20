@@ -306,10 +306,9 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         self.view.showAxis('right')
 
     def drs4_single_read_and_plot(self):
-        reg = 0x72
-        values = self.read_burst(reg)
+        values = self.fifo_burst_read()
+        #print(values)
         waveform_data={'time':0, 'data':{}}
-        
         for val in values:
             self.burst_fifo.put(val)
         length=self.burst_fifo.qsize()
@@ -321,9 +320,6 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             self.plot_waveform(waveform_data)
 
             return
-
-
-        
         try:
             i=0
             while i<length:
@@ -588,7 +584,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
     def _burst_read(self, seq, args):
         reg = seq[1][0]
         self.info('Burst read ... ')
-        values = self.read_burst(reg)
+        values = self.fifo_burst_read()
         if not values:
             self.info('Result is None')
             return None

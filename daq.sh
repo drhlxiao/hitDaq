@@ -1,1 +1,1 @@
-python3 ./daq.py
+python3 ./daq
