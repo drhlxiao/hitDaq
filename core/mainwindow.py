@@ -318,7 +318,6 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
                 self.debug_waveform_phase+=i*math.pi/20
                 waveform_data['data'][i+1]=[math.sin(2*j*math.pi/1024+self.debug_waveform_phase) for j in range(1024)]
             self.plot_waveform(waveform_data)
-
             return
         try:
             i=0
@@ -340,8 +339,9 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
                     self.plot_waveform(waveform_data)
                 else:
                     if channel_id not in waveform_data['data']:
-                        #waveform_data['data'][channel_id]=[sample]
-                        self.warning(f'Invalid detector channel: {channel_id}, should be 1-9')
+                        channel_id=1
+                        waveform_data['data'][channel_id]=[sample]
+                        #self.warning(f'Invalid detector channel: {channel_id}, should be 1-9')
                     else: 
                         waveform_data['data'][channel_id].append(sample)
         except queue.Empty:

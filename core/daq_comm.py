@@ -70,6 +70,15 @@ class DaqComm(object):
     def fifo_write(self, number):
       for word in range(number):
           self.write_register(addr_fifo, word+1)
+    def fifo_test(self, num):
+        
+        for word in range(number):
+            self.write_register(addr_fifo, word)
+        for word in range(number):
+            values=self.read_register(addr_fifo)
+
+    
+
 
     def fifo_burst_read(self):
         a = (cmd_read & 0xF0) + ((addr_fifo_burst >> 4) & 0x0F)
@@ -86,11 +95,13 @@ class DaqComm(object):
             amount_received = 0
             amount_expected = len(message)
             while amount_received < amount_expected:
-                data[amount_received] = self.s.recv(1)
+                one_byte = self.s.recv(1)
+                data[amount_received] = one_byte 
                 amount_received += 1
             value = []
             for word in range(fifo_burst_length):
                 value.append( int.from_bytes(data[4+(word*2)], byteorder='big') * 256 + int.from_bytes(data[5+(word*2)], byteorder='big') )
+            self.archive_manager.append(['fifo_burst_read', addr_fifo_burst, value])
             return value
         except Exception as e:
             self.error(e)

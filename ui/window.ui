@@ -422,7 +422,7 @@
         <item>
          <widget class="QTabWidget" name="registerContainerTab">
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="registerReadTab">
            <attribute name="title">
@@ -531,46 +531,6 @@
               </property>
               <property name="title">
                <string>Select a register to read/write</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-          <widget class="QWidget" name="statusTab">
-           <attribute name="title">
-            <string>Status</string>
-           </attribute>
-           <layout class="QVBoxLayout" name="verticalLayout_5">
-            <item>
-             <widget class="QTreeWidget" name="statusTreeWidget">
-              <column>
-               <property name="text">
-                <string>ID</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>Name</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>Status</string>
-               </property>
-              </column>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLabel" name="statusUpdateInfoLabel">
-              <property name="text">
-               <string>Last updated: </string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="readStatusButton">
-              <property name="text">
-               <string>Read Status</string>
               </property>
              </widget>
             </item>
@@ -776,6 +736,46 @@
            </size>
           </property>
          </spacer>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab">
+       <attribute name="title">
+        <string>Status</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_6">
+        <item>
+         <widget class="QPushButton" name="readStatusButton">
+          <property name="text">
+           <string>Update</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTreeWidget" name="statusTreeWidget">
+          <column>
+           <property name="text">
+            <string>ID</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Name</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Status</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="statusUpdateInfoLabel">
+          <property name="text">
+           <string>Last updated: </string>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
