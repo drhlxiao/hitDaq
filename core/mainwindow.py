@@ -106,7 +106,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             self.connectBtn: self.ui_connect_host,
             self.openScriptButton: self.select_script_file,
             self.selectArchiveFolderButton: self.select_archive_folder,
-            self.drs4SingleShotButton: self.drs4_single_read_and_plot,
+            self.drs4SingleShotButton: self.drs4_single_read_btn_clicked,
             self.registerReadButton: self._register_read,
             self.executeScriptButton: self.execute_script,
             self.registerWriteButton: self._register_write,
@@ -304,6 +304,12 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         self.view.showGrid(x=True, y=True)
         self.view.showAxis('top')
         self.view.showAxis('right')
+    def drs4_single_read_btn_clicked(self):
+        self.info('Reading waveform...')
+        for index in range(self.channelListWidget.count()):
+            self.plots[index].clear()
+        self.drs4_single_read_and_plot()
+        self.info('Waveform updated')
 
     def drs4_single_read_and_plot(self):
         values = self.fifo_burst_read()
@@ -376,10 +382,12 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
 
     def drs4_run(self):
         if self.drs4_timer_running:
+            self.info('Waveform reading stopped.')
             self.drs4_timer.stop()
             self.drs4_timer_running = False
             self.drs4RunButton.setText('Run')
         else:
+            self.info('Reading waveforms ...')
             update_period = self.waveformUpdatePeriodInput.value()
             ms = math.floor(update_period * 1000)
             self.drs4_timer.start(ms)
