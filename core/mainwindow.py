@@ -291,10 +291,10 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
     
         self.chartLayout = QtWidgets.QHBoxLayout(self.waveformGroupBox)
         self.chartLayout.addWidget(self.view)
-        colors=[(0,255,0),(255,0,0),(80,62,255),(136,86,167),(3,187,132),(227,74,51),(1,108,200),(255,158,119),(253,104,255)]
+        colors=[(0,255,0),(255,0,0),(80,62,255),(136,86,167),(3,187,132),(227,74,51),(1,108,200),(255,158,119),(253,104,255), (255,0,255)]
         #self.view.addLegend()
         self.plots={i: self.view.plot(pen=pg.mkPen(color=colors[i] ), 
-            name=f'Channel {i+1}') for i in range(9)}
+            name=f'Channel {i+1}') for i in range(len(colors))}
         #set color for channel selection boxes
         for index,color in enumerate(colors):
             self.channelListWidget.item(index).setForeground(QtGui.QColor(color[0],color[1],color[2]))
@@ -345,9 +345,8 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
                     self.plot_waveform(waveform_data)
                 else:
                     if channel_id not in waveform_data['data']:
-                        channel_id=1
+                        channel_id=10
                         waveform_data['data'][channel_id]=[sample]
-                        #self.warning(f'Invalid detector channel: {channel_id}, should be 1-9')
                     else: 
                         waveform_data['data'][channel_id].append(sample)
         except queue.Empty:
@@ -355,7 +354,8 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
 
 
     def update_drs4_channel_selection(self):
-        self.drs4_channel_enabled=[False]*9
+        self.drs4_channel_enabled=[False]*self.channelListWidget.count()
+
         for index in range(self.channelListWidget.count()):
             item = self.channelListWidget.item(index)
             checked=item.checkState() == QtCore.Qt.Checked

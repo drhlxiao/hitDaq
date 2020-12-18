@@ -132,7 +132,7 @@
                 </size>
                </property>
                <property name="text">
-                <string>10.42.0.130</string>
+                <string>10.42.0.136</string>
                </property>
               </widget>
              </item>
@@ -720,6 +720,14 @@
            </property>
            <property name="checkState">
             <enum>Checked</enum>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Debug</string>
+           </property>
+           <property name="checkState">
+            <enum>Unchecked</enum>
            </property>
           </item>
          </widget>
