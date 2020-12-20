@@ -164,7 +164,7 @@ class DaqComm(object):
             message.append(0xFF)
             data.append(0x00)
             data.append(0x00)
-      try:
+        try:
             amount_received = 0
             amount_expected = len(message)
             while amount_received < amount_expected:
@@ -172,15 +172,16 @@ class DaqComm(object):
                 amount_received += 1
             value = []
             for word in range(int(length)):
-                value.append( int.from_bytes(data[4+(word*2)], byteorder='big') * 256 + int.from_bytes(data[5+(word*2)], byteorder='big') )
+                value.append( int.from_bytes(data[4+(word*2)], 
+                    byteorder='big') * 256 + int.from_bytes(data[5+(word*2)], byteorder='big') )
             return value
         except Exception as e:
             print(str(e))
             return []
     
     def fifo_burst_read(self, length):
-        write_register(addr_fifo_burst_length, int(length))
-        ret = read_register_burst(addr_fifo_burst, length)
+        self.write_register(addr_fifo_burst_length, int(length))
+        ret = self.read_register_burst(addr_fifo_burst, length)
         return ret
         #for word in range(int(length)):
         #    print("Word %03d = 0x%0*X" %(word, 4, ret[word]))
@@ -189,9 +190,9 @@ class DaqComm(object):
     def fifo_onebyone_read(self):
       word = 0
       ret=[]
-      while (((read_register(addr_status) >> 13) & 0x01) == 0):
+      while (((self.read_register(addr_status) >> 13) & 0x01) == 0):
         #print("Word %03d = 0x%0*X" %(word, 4, 
-        ret.push(read_register(addr_fifo))
+        ret.append(self.read_register(addr_fifo))
         word = word + 1
 
     def fifo_burst_read(self):
@@ -362,6 +363,40 @@ class DaqComm(object):
                 self.info("register: %s read = %s" %
                           (hex(register), hex(value)))
 
+    def decode_readout_mode(self):
+        ret       = self.read_register(addr_readout_mode)
+        channels  = self.read_register(addr_readout_channels)
+        delay     = self.read_register(addr_readout_delay)
+        length    = self.read_register(addr_readout_length)
+        start     = read_register(addr_readout_start)
+        test = (ret >> 2) & 0x01
+        mode = (ret & 0x03)
+        print("Readout mode: %s" %(hex(ret)))
+
+        if (mode == 1):
+            self.info("\tRegion of Interest readout")
+        elif (mode == 2):
+            self.info("\tSmart readout")
+        elif (mode == 3):
+            self.info("\tFull readout")
+        else:
+            self.info("\tUnsupported readout")
+
+        if (test == 1):
+            self.info("\tTest on")
+        else:
+            self.info("\tTest off")
+
+        self.info("Channels register: %s" %(channels))
+        self.info("\t%s %s %s %s %s %s %s %s %s" %(((channels >> 8) & 0x01), ((channels >> 7) & 0x01), 
+            ((channels >> 6) & 0x01), ((channels >> 5) & 0x01), ((channels >> 4) & 0x01), 
+            ((channels >> 3) & 0x01), ((channels >> 2) & 0x01), 
+            ((channels >> 1) & 0x01), ((channels >> 0) & 0x01)))
+        self.info("Delay register:    %s" %(delay))
+        self.info("Length register:   %s" %(length))
+        self.info("Start register:    %s" %(start))
+
+
     def write(self, register, value):
         self.telecommand_counter += 1
         a = (cmd_write & 0xF0) + ((register >> 4) & 0x0F)
@@ -408,13 +443,14 @@ class DaqComm(object):
         value = self.read(addr_sram)
         self.info("SRAM: %s read = %s" % (hex(address), hex(value)))
 
-    def read_sram_burst(self, address):
+    def read_sram_burst(self, address,length):
         row = (address & 0x7FF)
         column = (address & 0x3FF800) >> 11
-        self.write(addr_row, row)
-        self.write(addr_column, column)
-        value = self.read_burst(addr_sram_burst)
-        return value
+        self.write_register(addr_sram_address_row, row)
+        self.write_register(addr_sram_address_col, column)
+        self.write_register(addr_sram_burst_length, int(length))
+        ret = self.read_register_burst(addr_sram_burst_data, int(length))
+        return ret
 
     def get_sram_burst(self, address):
         row = (address & 0x7FF)
