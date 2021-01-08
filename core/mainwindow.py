@@ -312,15 +312,12 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         self.info('Waveform updated')
 
     def drs4_single_read_and_plot(self):
-        print('reading ')
         values = self.fifo_burst_read(burst_read_fifo_length)
-        print('next')
         #print(values)
         waveform_data={'time':0, 'data':{}}
         for val in values:
             self.burst_fifo.put(val)
         length=self.burst_fifo.qsize()
-        channel_id=0
         if debug:
             for i in range(9):
                 self.debug_waveform_phase+=i*math.pi/20
@@ -329,7 +326,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             return
         try:
             i=0
-            current_channel=10
+            channel_id=10
             while i<length:
                 timestamp=0
                 sample=self.burst_fifo.get(False)
@@ -346,6 +343,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
                     if waveform_data['data']:
                         self.plot_waveform(waveform_data)
                     channel_id=sample&0x000F
+                    print(channel_id)
                 else:
                     if channel_id not in waveform_data['data']:
                         waveform_data['data'][channel_id]=[]

@@ -163,7 +163,7 @@ class DaqComm(object):
     def fifo_burst_read(self, length):
         self.write_register(addr_fifo_burst_length, int(length))
         ret = self.read_register_burst(addr_fifo_burst, length)
-        print(ret)
+        #print(ret)
         return ret
         #for word in range(int(length)):
         #    print("Word %03d = 0x%0*X" %(word, 4, ret[word]))
@@ -310,7 +310,7 @@ class DaqComm(object):
         start     = read_register(addr_readout_start)
         test = (ret >> 2) & 0x01
         mode = (ret & 0x03)
-        print("Readout mode: %s" %(hex(ret)))
+        self.info("Readout mode: %s" %(hex(ret)))
 
         if (mode == 1):
             self.info("\tRegion of Interest readout")
