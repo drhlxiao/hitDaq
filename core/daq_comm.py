@@ -141,18 +141,6 @@ class DaqComm(object):
         self.telemetry_counter = 0
         self.archive_manager = archive.Archive()
 
-        # print('parent')
-        # print(parent)
-    def fifo_write(self, number):
-      for word in range(number):
-          self.write_register(addr_fifo, word+1)
-    def fifo_test(self, num):
-        
-        for word in range(number):
-            self.write_register(addr_fifo, word)
-        for word in range(number):
-            values=self.read_register(addr_fifo)
-
    
     def read_register_burst(register, length):
         a = (cmd_read & 0xF0) + ((register >> 4) & 0x0F)
@@ -188,41 +176,12 @@ class DaqComm(object):
 
 
     def fifo_onebyone_read(self):
-      word = 0
-      ret=[]
-      while (((self.read_register(addr_status) >> 13) & 0x01) == 0):
-        #print("Word %03d = 0x%0*X" %(word, 4, 
-        ret.append(self.read_register(addr_fifo))
-        word = word + 1
-
-    def fifo_burst_read(self):
-        a = (cmd_read & 0xF0) + ((addr_fifo_burst >> 4) & 0x0F)
-        b = ((addr_fifo_burst << 4) & 0xF0) + (cmd_read & 0x0F)
-        message = [a, b, 0xFF, 0xFF]
-        data = [0x00, 0x00, 0x00, 0x00]
-        for word in range(fifo_burst_length):
-            message.append(0xFF)
-            message.append(0xFF)
-            data.append(0x00)
-            data.append(0x00)
-        try:
-            self.s.sendall(bytes(message))
-            amount_received = 0
-            amount_expected = len(message)
-            while amount_received < amount_expected:
-                one_byte = self.s.recv(1)
-                data[amount_received] = one_byte 
-                amount_received += 1
-            value = []
-            for word in range(fifo_burst_length):
-                value.append( int.from_bytes(data[4+(word*2)], byteorder='big') * 256 + int.from_bytes(data[5+(word*2)], byteorder='big') )
-            self.archive_manager.append(['fifo_burst_read', addr_fifo_burst, value])
-            return value
-        except Exception as e:
-            self.error(e)
-            return []
-
-
+        word = 0
+        ret=[]
+        while (((self.read_register(addr_status) >> 13) & 0x01) == 0):
+          ret.append(self.read_register(addr_fifo))
+          word = word + 1
+        return ret
 
 
 
@@ -297,11 +256,6 @@ class DaqComm(object):
             self.error(str(e))
         return None
 
-    def read_samples(self, event, channel):
-        address = ((event & 0x1FF) << 13) + ((channel & 0x07) << 10)
-        #print("%s" %(hex(address)))
-        value = self.get_sram_burst(address)
-        return value
 
     def read_register(self, register):
         register = parse_int(register)
@@ -339,9 +293,6 @@ class DaqComm(object):
             decoded = readout * 0.0078125
         return decoded
 
-    def _decode_temp(self, inputs,  readout):
-        # reg=inputs[0]
-        return self.decode_temp(readout)
 
     def get_temperatures(self):
         t1 = self.read(0x21)
@@ -353,15 +304,7 @@ class DaqComm(object):
         msg.append("temperature 0x92: %s = %sC" % (hex(t2), str(tt2)))
         return msg
 
-    def read_all_registers(self):
-        return [self.read_register(register) for register in range(0x100)]
 
-    def read_all_registers_silent(self):
-        for register in range(0x100):
-            value = self.read(register)
-            if (value != 0xbaad):
-                self.info("register: %s read = %s" %
-                          (hex(register), hex(value)))
 
     def decode_readout_mode(self):
         ret       = self.read_register(addr_readout_mode)
@@ -438,10 +381,12 @@ class DaqComm(object):
     def read_sram(self, address):
         row = (address & 0x7FF)
         column = (address & 0x3FF800) >> 11
-        self.write(addr_row, row)
-        self.write(addr_column, column)
-        value = self.read(addr_sram)
+        self.write(addr_sram_address_row, row)
+        self.write(addr_sram_address_col, column)
+        value = self.read_register(addr_sram_data)
         self.info("SRAM: %s read = %s" % (hex(address), hex(value)))
+        return value
+
 
     def read_sram_burst(self, address,length):
         row = (address & 0x7FF)
@@ -452,85 +397,26 @@ class DaqComm(object):
         ret = self.read_register_burst(addr_sram_burst_data, int(length))
         return ret
 
-    def get_sram_burst(self, address):
-        row = (address & 0x7FF)
-        column = (address & 0x3FF800) >> 11
-        self.write(addr_row, row)
-        self.write(addr_column, column)
-        value = self.read_burst(addr_sram_burst)
-        return value
 
-    def read_sram_one_by_one(self, address, size):
-        row = (address & 0x7FF)
-        column = (address & 0x3FF800) >> 11
-        self.write(addr_row, row)
-        self.write(addr_column, column)
-        for a in range(size):
-            self.read_sram_inc()
-
-    def read_sram_silent(self, address):
-        row = (address & 0x7FF)
-        column = (address & 0x3FF800) >> 11
-        self.write(addr_row, row)
-        self.write(addr_column, column)
-        value = self.read(addr_sram)
-        return value
-
-    def read_sram_inc_silent(self):
-        value = self.read(addr_sram_inc)
-        return value
 
     def read_sram_inc(self):
-        row = self.read(addr_row)
-        column = self.read(addr_column)
+        row = self.read_register(addr_sram_address_row)
+        column = self.read_register(addr_sram_address_col)
         address = (column << 11) + row
-        value = self.read(addr_sram_inc)
+        value = self.read_register(addr_sram_data_inc)
         self.info("SRAM: %s read = %s" % (hex(address), hex(value)))
-        return value
+        return (address, value)
 
     def write_sram(self, address, value):
         row = (address & 0x7FF)
         column = (address & 0x3FF800) >> 11
-        self.write(addr_row, row)
-        self.write(addr_column, column)
-        self.write(addr_sram, value)
-        self.info("SRAM: %s written = %s" % (hex(address), hex(value)))
+        self.write_register(addr_sram_address_row, row)
+        self.write_register(addr_sram_address_col, column)
+        self.write_register(addr_sram_data, value)
 
-    def write_sram_silent(self, address, value):
-        row = (address & 0x7FF)
-        column = (address & 0x3FF800) >> 11
-        self.write(addr_row, row)
-        self.write(addr_column, column)
-        self.write(addr_sram, value)
 
-    def memory_test(self):
-        memory = []
-        for a in range(10):
-            memory.append(random.randint(0, 0x10000))
-        self.write_sram_silent(a, memory[a])
-        self.read_sram_silent(0)
-        for a in range(10):
-            value = self.read_sram_inc_silent()
-        if (value != memory[a]):
-            self.info("ERROR! address: %s written: %s read: %s" %
-                      (hex(a), hex(memory[a]), hex(value)))
-        self.info("Memory test done")
 
-    def memory_dump(self, address_start, address_stop):
-        self.read_sram_silent(address_start)
-        values = []
-        start = time.time()
-        for a in range(address_start, address_stop):
-            values.append(self.read_sram_inc_silent())
-        end = time.time()
-        self.info("SRAM: from %s to %s:" %
-                  (hex(address_start), hex(address_stop)))
-        for a in range(address_start, address_stop):
-            self.info(values[a])
-        self.info("... in %d seconds" % (end - start))
 
-    def list_event(self, event):
-        return [self.read_samples(event, i) for i in range(8)]
 
 
     def is_connected(self):
