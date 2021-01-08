@@ -142,26 +142,19 @@ class DaqComm(object):
         self.archive_manager = archive.Archive()
 
    
-    def read_register_burst(register, length):
+    def read_register_burst(self,register, length):
         a = (cmd_read & 0xF0) + ((register >> 4) & 0x0F)
         b = ((register << 4) & 0xF0) + (cmd_read & 0x0F)
+        double_len=2*int(length)
         message = [a, b, 0xFF, 0xFF]
-        data = [0x00, 0x00, 0x00, 0x00]
-        for word in range(int(length)):
-            message.append(0xFF)
-            message.append(0xFF)
-            data.append(0x00)
-            data.append(0x00)
+        message.extend([0xFF]*double_len)
+        data = []
+        value = []
         try:
-            amount_received = 0
-            amount_expected = len(message)
-            while amount_received < amount_expected:
-                data[amount_received] = self.s.recv(1)
-                amount_received += 1
-            value = []
-            for word in range(int(length)):
-                value.append( int.from_bytes(data[4+(word*2)], 
-                    byteorder='big') * 256 + int.from_bytes(data[5+(word*2)], byteorder='big') )
+            self.s.sendall(bytes(message))
+            data=[ self.s.recv(1) for x in range(double_len+4)]
+            value=[ int.from_bytes(data[4+(word*2)], byteorder='big') * 256 
+                    + int.from_bytes(data[5+(word*2)], byteorder='big') for word in range(int(length))] 
             return value
         except Exception as e:
             print(str(e))
@@ -170,6 +163,7 @@ class DaqComm(object):
     def fifo_burst_read(self, length):
         self.write_register(addr_fifo_burst_length, int(length))
         ret = self.read_register_burst(addr_fifo_burst, length)
+        print(ret)
         return ret
         #for word in range(int(length)):
         #    print("Word %03d = 0x%0*X" %(word, 4, ret[word]))
@@ -292,7 +286,9 @@ class DaqComm(object):
         else:
             decoded = readout * 0.0078125
         return decoded
-
+    def _decode_temp(self, inputs,  readout):
+        # reg=inputs[0]
+        return self.decode_temp(readout)
 
     def get_temperatures(self):
         t1 = self.read(0x21)

@@ -312,7 +312,9 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         self.info('Waveform updated')
 
     def drs4_single_read_and_plot(self):
-        values = self.fifo_burst_read()
+        print('reading ')
+        values = self.fifo_burst_read(burst_read_fifo_length)
+        print('next')
         #print(values)
         waveform_data={'time':0, 'data':{}}
         for val in values:
@@ -327,6 +329,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             return
         try:
             i=0
+            current_channel=10
             while i<length:
                 timestamp=0
                 sample=self.burst_fifo.get(False)
@@ -339,16 +342,14 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
                     waveform_data['data']={}
                     i+=2
                     waveform_data['time']=timestamp
-                elif sample & 0x8000 == 0x1000:
-                    channel_id+=1
-                    waveform_data['data'][channel_id]=[sample]
-                    self.plot_waveform(waveform_data)
+                elif sample >>4==0xFFF: 
+                    if waveform_data['data']:
+                        self.plot_waveform(waveform_data)
+                    channel_id=sample&0x000F
                 else:
                     if channel_id not in waveform_data['data']:
-                        channel_id=10
-                        waveform_data['data'][channel_id]=[sample]
-                    else: 
-                        waveform_data['data'][channel_id].append(sample)
+                        waveform_data['data'][channel_id]=[]
+                    waveform_data['data'][channel_id].append(sample)
         except queue.Empty:
             pass
 
@@ -592,7 +593,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
     def _burst_read(self, seq, args):
         reg = seq[1][0]
         self.info('Burst read ... ')
-        values = self.fifo_burst_read()
+        values = self.fifo_burst_read(burst_read_fifo_length)
         if not values:
             self.info('Result is None')
             return None
