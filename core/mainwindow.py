@@ -19,8 +19,8 @@ from core import window
 from core import daq_comm
 from core import config
 
-burst_read_fifo_length=514
 debug=False
+MAX_LOG_ITEMS=2000
 
 class WorkerSignals(QObject):
     '''
@@ -65,8 +65,13 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         super(Ui, self).setupUi(MainWindow)
         super(Ui, self).__init__()
         self.MainWindow = MainWindow
+        self.burst_read_fifo_length=514
+        
 
         self.channel_id=10
+        #self.waveform_data={}
+        self.waveform_data={'time':0, 'data':{}}
+        self.num_log_items=0
 
         self.current_folder = '.'
         self.dynamic_layouts = []
@@ -115,6 +120,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             self.truncateArchivingButton: self.truncate_archiving,
             self.drs4RunButton: self.drs4_run,
             self.readoutConfigButton: self.config_readout_mode,
+            self.clearWaveformsButton: self.clear_waveforms,
             self.readStatusButton: self.read_and_show_status,
         }
         actions = {self.action_Exit: self.closeEvent,
@@ -133,6 +139,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
 
         self.channelListWidget.itemChanged.connect(self.update_drs4_channel_selection)
         self.waveformUpdatePeriodInput.valueChanged.connect(self.update_read_frequency)
+        self.fifoLengthSpinBox.valueChanged.connect(self.update_fifo_read_length)
 
         self.drs4_timer = QtCore.QTimer()
         self.drs4_timer.timeout.connect(self.drs4_single_read_and_plot)
@@ -289,27 +296,36 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
 
     def create_sci_chart(self):
         pg.setConfigOption('leftButtonPan', False)
-        self.view= pg.PlotWidget()
+        self.plt= pg.PlotWidget()
     
         self.chartLayout = QtWidgets.QHBoxLayout(self.waveformGroupBox)
-        self.chartLayout.addWidget(self.view)
-        colors=[(0,255,0),(255,0,0),(80,62,255),(136,86,167),(3,187,132),(227,74,51),(1,108,200),(255,158,119),(253,104,255), (255,0,255)]
-        #self.view.addLegend()
-        self.plots={i: self.view.plot(pen=pg.mkPen(color=colors[i] ), 
+        self.chartLayout.addWidget(self.plt)
+        colors=[(0,255,0),(255,0,0),(80,62,255),(136,86,167),(3,187,132),(227,74,51),(1,108,200),(255,158,119),(253,104,255), (255,200,200) ]
+        #self.plt.addLegend()
+        self.plots={i: self.plt.plot(pen=pg.mkPen(color=colors[i] ), 
             name=f'Channel {i+1}') for i in range(len(colors))}
         #set color for channel selection boxes
         for index,color in enumerate(colors):
-            self.channelListWidget.item(index).setForeground(QtGui.QColor(color[0],color[1],color[2]))
+            try:
+                self.channelListWidget.item(index).setForeground(QtGui.QColor(color[0],color[1],color[2]))
+            except:
+                pass
 
-        self.view.setLabel('left', "ADC", units='')
-        self.view.setLabel('bottom', "Time", units='')
-        self.view.showGrid(x=True, y=True)
-        self.view.showAxis('top')
-        self.view.showAxis('right')
+        self.plt.setLabel('left', "ADC", units='')
+        self.plt.setLabel('bottom', "Time", units='')
+        self.plt.showGrid(x=True, y=True)
+        self.plt.showAxis('top')
+        self.plt.showAxis('right')
+    def clear_waveforms(self):
+        for index in self.plots:
+            value=[0]
+            self.plots[index].setData(value)
+
     def drs4_single_read_btn_clicked(self):
         self.info('Reading waveform...')
-        for index in range(self.channelListWidget.count()):
-            self.plots[index].clear()
+        for index in self.plots:
+            value=[0]
+            self.plots[index].setData(value)
         self.drs4_single_read_and_plot()
         self.info('Waveform updated')
 
@@ -320,44 +336,35 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
                 waveform_data['data'][i+1]=[math.sin(2*j*math.pi/1024+self.debug_waveform_phase) for j in range(1024)]
             self.plot_waveform(waveform_data)
             return
-        waveform_data={'time':0, 'data':{}}
         if self.is_fifo_empty() == None:
             self.info('Fifo status unknown!')
             return
         if self.is_fifo_empty() == True:
-            self.plot_waveform(waveform_data)
+            self.plot_waveform(self.waveform_data)
             self.info('Fifo is empty')
             return 
-        samples = self.fifo_burst_read(burst_read_fifo_length)
+        samples = self.fifo_burst_read(self.burst_read_fifo_length)
         i=0
         len_samples=len(samples)
         while i < len_samples:
             timestamp=0
             sample=samples[i]
             if sample==0xFFFF:
-                self.plot_waveform(waveform_data)
-                waveform_data['data']={}
+                self.plot_waveform(self.waveform_data)
+                self.waveform_data['data']={}
                 self.channel_id=0
-                if i+2<len_samples:
-                    waveform_data['time']=samples[i+1]*256+samples[i+2]
-                    i=i+2
-                print('found start of channel')
-            elif sample>>4 ==0xFFF: 
-                #end of a channel, next channel
-                print('End plotting channel:',self.channel_id)
-                #self.plot_waveform(waveform_data)
-                new_channel=sample&0x000F
-                if new_channel!=self.channel_id:
-                    self.plot_waveform(waveform_data)
-
-                self.channel_id=new_channel
-                print('New channel:',self.channel_id)
+                if i+3<len_samples:
+                    self.waveform_data['time']=samples[i+1]*256+samples[i+2]
+                    self.channel_id=samples[i+3]&0x000F
+                    i=i+3
+            elif sample >>4 == 0xfff:
+                self.channel_id=sample&0x000F
+                self.plot_waveform(self.waveform_data)
             else:
-                if self.channel_id not in waveform_data['data']:
-                    print('reset channel:',self.channel_id)
-                    waveform_data['data'][self.channel_id]=[]
-                #print('add sample to channel:',channel_id)
-                waveform_data['data'][self.channel_id].append(sample)
+                if self.channel_id not in self.waveform_data['data']:
+                    self.waveform_data['data'][self.channel_id]=[]
+                #print('add sample to channel:',self.channel_id)
+                self.waveform_data['data'][self.channel_id].append(sample)
             i+=1
 
 
@@ -369,13 +376,16 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             checked=item.checkState() == QtCore.Qt.Checked
             self.drs4_channel_enabled[index]=checked
             if not checked:
-                self.plots[index].clear()
+                self.plots[index].setData([0])
             #else:
-            #    self.view.addItem(self.plots[index])
+            #    self.plt.addItem(self.plots[index])
 
             
 
 
+    def update_fifo_read_length(self):
+        self.burst_read_fifo_length=self.fifoLengthSpinBox.value()
+        self.info(f'Burst fifo read length:{self.burst_read_fifo_length}')
 
     def update_read_frequency(self):
         if self.drs4_timer_running:
@@ -404,14 +414,15 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
 
     def plot_waveform(self, waveform_data):
         if not waveform_data['data']:
-            print('waveform empty')
             return
         for key, value in waveform_data['data'].items():
-            index=key-1
+            index=key
+            #print('plotting waveforms: ', key, value)
             if len(value)>0 and index in self.plots:
                 if self.drs4_channel_enabled[index]:
+                    #self.plots[index].clear()
+                    #print('plotting waveforms')
                     self.plots[index].setData(value)
-                    print('plotting', index)
 
 
 
@@ -602,7 +613,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
     def _burst_read(self, seq, args):
         reg = seq[1][0]
         self.info('Burst read ... ')
-        values = self.fifo_burst_read(burst_read_fifo_length)
+        values = self.fifo_burst_read(self.burst_read_fifo_length)
         if not values:
             self.info('Result is None')
             return None
@@ -727,10 +738,19 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         if where != 0:
             if timestamp:
                 msg = f'[{datetime.now().isoformat()}] {msg}'
+            if self.num_log_items>MAX_LOG_ITEMS:
+                return 'log',item
+            if self.num_log_items == MAX_LOG_ITEMS:
+                color='red'
+                msg=f"Log window can not show more than {MAX_LOG_ITEMS} items!"
+            
+
+
             item = QtWidgets.QListWidgetItem(msg)
             item.setForeground(QtGui.QColor(color))
             self.listWidget.addItem(item)
             self.listWidget.scrollToBottom()
+            self.num_log_items+=1
             return 'log', item
 
     def close(self):

@@ -65,7 +65,7 @@
        <string notr="true">QTabBar::tab { height: 35px; }</string>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <property name="iconSize">
        <size>
@@ -544,8 +544,8 @@
        <attribute name="title">
         <string>Science</string>
        </attribute>
-       <layout class="QGridLayout" name="gridLayout_3">
-        <item row="0" column="0" rowspan="5">
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
          <widget class="QGroupBox" name="waveformGroupBox">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -558,192 +558,212 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="1" rowspan="5">
+        <item>
          <widget class="Line" name="line">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
          </widget>
         </item>
-        <item row="0" column="2">
-         <widget class="QPushButton" name="drs4SingleShotButton">
-          <property name="text">
-           <string>Single</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="4">
-         <widget class="QPushButton" name="drs4RunButton">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>100</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>200</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="styleSheet">
-           <string notr="true"/>
-          </property>
-          <property name="text">
-           <string>Run</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="2" colspan="2">
-         <widget class="QLabel" name="label_13">
-          <property name="text">
-           <string>Refresh(s)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="4">
-         <widget class="QDoubleSpinBox" name="waveformUpdatePeriodInput">
-          <property name="minimum">
-           <double>0.100000000000000</double>
-          </property>
-          <property name="singleStep">
-           <double>0.100000000000000</double>
-          </property>
-          <property name="value">
-           <double>0.500000000000000</double>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="2" colspan="2">
-         <widget class="QLabel" name="label_15">
-          <property name="text">
-           <string>Filter:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="2" colspan="3">
-         <widget class="QListWidget" name="channelListWidget">
-          <property name="minimumSize">
-           <size>
-            <width>200</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>220</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <item>
-           <property name="text">
-            <string>Channel 1</string>
-           </property>
-           <property name="checkState">
-            <enum>Checked</enum>
-           </property>
+        <item>
+         <layout class="QGridLayout" name="gridLayout_3">
+          <item row="0" column="0">
+           <widget class="QPushButton" name="drs4SingleShotButton">
+            <property name="text">
+             <string>Single</string>
+            </property>
+           </widget>
           </item>
-          <item>
-           <property name="text">
-            <string>Channel 2</string>
-           </property>
-           <property name="checkState">
-            <enum>Checked</enum>
-           </property>
+          <item row="0" column="2">
+           <widget class="QPushButton" name="drs4RunButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>200</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="styleSheet">
+             <string notr="true"/>
+            </property>
+            <property name="text">
+             <string>Run</string>
+            </property>
+           </widget>
           </item>
-          <item>
-           <property name="text">
-            <string>Channel 3</string>
-           </property>
-           <property name="checkState">
-            <enum>Checked</enum>
-           </property>
+          <item row="1" column="0" colspan="2">
+           <widget class="QLabel" name="label_13">
+            <property name="text">
+             <string>Refresh(s)</string>
+            </property>
+           </widget>
           </item>
-          <item>
-           <property name="text">
-            <string>Channel 4</string>
-           </property>
-           <property name="checkState">
-            <enum>Checked</enum>
-           </property>
+          <item row="1" column="2">
+           <widget class="QDoubleSpinBox" name="waveformUpdatePeriodInput">
+            <property name="minimum">
+             <double>0.100000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+            <property name="value">
+             <double>0.500000000000000</double>
+            </property>
+           </widget>
           </item>
-          <item>
-           <property name="text">
-            <string>Channel 5</string>
-           </property>
-           <property name="checkState">
-            <enum>Checked</enum>
-           </property>
+          <item row="2" column="0" colspan="2">
+           <widget class="QLabel" name="label_16">
+            <property name="text">
+             <string>Fifo length:</string>
+            </property>
+           </widget>
           </item>
-          <item>
-           <property name="text">
-            <string>Channel 6</string>
-           </property>
-           <property name="checkState">
-            <enum>Checked</enum>
-           </property>
+          <item row="2" column="2">
+           <widget class="QSpinBox" name="fifoLengthSpinBox">
+            <property name="maximum">
+             <number>1024</number>
+            </property>
+            <property name="value">
+             <number>514</number>
+            </property>
+           </widget>
           </item>
-          <item>
-           <property name="text">
-            <string>Channel 7</string>
-           </property>
-           <property name="checkState">
-            <enum>Checked</enum>
-           </property>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_15">
+            <property name="text">
+             <string>Filter:</string>
+            </property>
+           </widget>
           </item>
-          <item>
-           <property name="text">
-            <string>Channel 8</string>
-           </property>
-           <property name="foreground">
-            <brush brushstyle="NoBrush">
-             <color alpha="255">
-              <red>0</red>
-              <green>0</green>
-              <blue>0</blue>
-             </color>
-            </brush>
-           </property>
-           <property name="checkState">
-            <enum>Checked</enum>
-           </property>
+          <item row="4" column="0" colspan="3">
+           <widget class="QListWidget" name="channelListWidget">
+            <property name="minimumSize">
+             <size>
+              <width>200</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>220</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <item>
+             <property name="text">
+              <string>Channel 1</string>
+             </property>
+             <property name="checkState">
+              <enum>Checked</enum>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Channel 2</string>
+             </property>
+             <property name="checkState">
+              <enum>Checked</enum>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Channel 3</string>
+             </property>
+             <property name="checkState">
+              <enum>Checked</enum>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Channel 4</string>
+             </property>
+             <property name="checkState">
+              <enum>Checked</enum>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Channel 5</string>
+             </property>
+             <property name="checkState">
+              <enum>Checked</enum>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Channel 6</string>
+             </property>
+             <property name="checkState">
+              <enum>Checked</enum>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Channel 7</string>
+             </property>
+             <property name="checkState">
+              <enum>Checked</enum>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Channel 8</string>
+             </property>
+             <property name="foreground">
+              <brush brushstyle="NoBrush">
+               <color alpha="255">
+                <red>0</red>
+                <green>0</green>
+                <blue>0</blue>
+               </color>
+              </brush>
+             </property>
+             <property name="checkState">
+              <enum>Checked</enum>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Channel 9</string>
+             </property>
+             <property name="checkState">
+              <enum>Checked</enum>
+             </property>
+            </item>
+           </widget>
           </item>
-          <item>
-           <property name="text">
-            <string>Channel 9</string>
-           </property>
-           <property name="checkState">
-            <enum>Checked</enum>
-           </property>
+          <item row="5" column="0" colspan="3">
+           <widget class="QPushButton" name="clearWaveformsButton">
+            <property name="text">
+             <string>Clear Waveforms</string>
+            </property>
+           </widget>
           </item>
-          <item>
-           <property name="text">
-            <string>Debug</string>
-           </property>
-           <property name="checkState">
-            <enum>Unchecked</enum>
-           </property>
+          <item row="6" column="1">
+           <spacer name="verticalSpacer_2">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>223</height>
+             </size>
+            </property>
+           </spacer>
           </item>
-         </widget>
-        </item>
-        <item row="4" column="3">
-         <spacer name="verticalSpacer_2">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>223</height>
-           </size>
-          </property>
-         </spacer>
+         </layout>
         </item>
        </layout>
       </widget>
