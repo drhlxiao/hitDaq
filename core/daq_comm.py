@@ -161,9 +161,9 @@ class DaqComm(object):
             return []
     
     def fifo_burst_read(self, length):
-        self.write_register(addr_fifo_burst_length, int(length))
+        self.write(addr_fifo_burst_length, int(length))
         ret = self.read_register_burst(addr_fifo_burst, length)
-        #print(ret)
+        print(ret)
         return ret
         #for word in range(int(length)):
         #    print("Word %03d = 0x%0*X" %(word, 4, ret[word]))
@@ -267,6 +267,12 @@ class DaqComm(object):
                 self.info(f'\t{status_bits[bit]}:{((value >> bit) & 1) == 1}')
             return None
         self.info(f"status for {addr_status}: None")
+        return None
+    def is_fifo_empty(self):
+        value = self.read(addr_status)
+        if value:
+            bit=13
+            return ((value >> bit) & 1) == 1
         return None
 
     def status(self):

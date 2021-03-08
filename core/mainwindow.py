@@ -19,7 +19,7 @@ from core import window
 from core import daq_comm
 from core import config
 
-burst_read_fifo_length=256
+burst_read_fifo_length=514
 debug=False
 
 class WorkerSignals(QObject):
@@ -66,6 +66,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         super(Ui, self).__init__()
         self.MainWindow = MainWindow
 
+        self.channel_id=10
 
         self.current_folder = '.'
         self.dynamic_layouts = []
@@ -137,7 +138,8 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         self.drs4_timer.timeout.connect(self.drs4_single_read_and_plot)
         self.drs4_timer_running = False
         self.update_drs4_channel_selection()
-        self.burst_fifo= queue.Queue()
+        #self.burst_fifo= queue.Queue()
+        self.burst_fifo= []
         self.debug_waveform_phase=0
 
     def update_logger_state(self):
@@ -155,7 +157,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         false_color='#b22222'
         self.statusUpdateInfoLabel.setText('Last updated at {} '.format(datetime.now().isoformat()))
         
-        if not value:
+        if value == None:
             self.error('Invalid status value!')
             return
         for bit in range(16):
@@ -312,44 +314,51 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         self.info('Waveform updated')
 
     def drs4_single_read_and_plot(self):
-        values = self.fifo_burst_read(burst_read_fifo_length)
-        #print(values)
-        waveform_data={'time':0, 'data':{}}
-        for val in values:
-            self.burst_fifo.put(val)
-        length=self.burst_fifo.qsize()
         if debug:
             for i in range(9):
                 self.debug_waveform_phase+=i*math.pi/20
                 waveform_data['data'][i+1]=[math.sin(2*j*math.pi/1024+self.debug_waveform_phase) for j in range(1024)]
             self.plot_waveform(waveform_data)
             return
-        try:
-            i=0
-            channel_id=10
-            while i<length:
-                timestamp=0
-                sample=self.burst_fifo.get(False)
-                i+=1
-                if sample==0xFFFF:
+        waveform_data={'time':0, 'data':{}}
+        if self.is_fifo_empty() == None:
+            self.info('Fifo status unknown!')
+            return
+        if self.is_fifo_empty() == True:
+            self.plot_waveform(waveform_data)
+            self.info('Fifo is empty')
+            return 
+        samples = self.fifo_burst_read(burst_read_fifo_length)
+        i=0
+        len_samples=len(samples)
+        while i < len_samples:
+            timestamp=0
+            sample=samples[i]
+            if sample==0xFFFF:
+                self.plot_waveform(waveform_data)
+                waveform_data['data']={}
+                self.channel_id=0
+                if i+2<len_samples:
+                    waveform_data['time']=samples[i+1]*256+samples[i+2]
+                    i=i+2
+                print('found start of channel')
+            elif sample>>4 ==0xFFF: 
+                #end of a channel, next channel
+                print('End plotting channel:',self.channel_id)
+                #self.plot_waveform(waveform_data)
+                new_channel=sample&0x000F
+                if new_channel!=self.channel_id:
                     self.plot_waveform(waveform_data)
-                    channel_id=0
-                    timestamp+=self.burst_fifo.get(False)*256
-                    timestamp+=self.burst_fifo.get(False)
-                    waveform_data['data']={}
-                    i+=2
-                    waveform_data['time']=timestamp
-                elif sample >>4==0xFFF: 
-                    if waveform_data['data']:
-                        self.plot_waveform(waveform_data)
-                    channel_id=sample&0x000F
-                    print(channel_id)
-                else:
-                    if channel_id not in waveform_data['data']:
-                        waveform_data['data'][channel_id]=[]
-                    waveform_data['data'][channel_id].append(sample)
-        except queue.Empty:
-            pass
+
+                self.channel_id=new_channel
+                print('New channel:',self.channel_id)
+            else:
+                if self.channel_id not in waveform_data['data']:
+                    print('reset channel:',self.channel_id)
+                    waveform_data['data'][self.channel_id]=[]
+                #print('add sample to channel:',channel_id)
+                waveform_data['data'][self.channel_id].append(sample)
+            i+=1
 
 
     def update_drs4_channel_selection(self):
@@ -395,12 +404,14 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
 
     def plot_waveform(self, waveform_data):
         if not waveform_data['data']:
+            print('waveform empty')
             return
         for key, value in waveform_data['data'].items():
             index=key-1
             if len(value)>0 and index in self.plots:
                 if self.drs4_channel_enabled[index]:
                     self.plots[index].setData(value)
+                    print('plotting', index)
 
 
 

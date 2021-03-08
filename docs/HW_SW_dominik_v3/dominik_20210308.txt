@@ -1,0 +1,36 @@
+ Dear Hualin,
+
+I cannot send this batch files by email.
+*batm *tar, *zip is not acceptable.
+Here is the link:
+https://drive.google.com/file/d/1Sbix64sEfdt3mj7nXfCWyOZR3g0TqIhC/view?usp=sharing
+
+What we have done is mostly:
+
+init.bat - to initialize device and readout mode
+cal_on - to enable pulser
+cal_off - to disable pulser
+drs_trigger - to send one trigger by command (pedestal)
+drs_enable - to enable readout sequencer and start drs
+drs_disable - to disable readout sequencer and stop drs
+triggers_off - to switch off triggers and trigger patterns
+
+So, to see initialize one can use:
+init.bat
+triggers_off
+
+If one needs pulser then (if only noise then do not use it):
+cal_on
+
+To start DRS and enable rreadout:
+drs_enable
+
+Then to generate events:
+drs_trigger
+
+To start  disable DRS and readout:
+drs_enable
+
+
+Best, Dominik Rybka
+
