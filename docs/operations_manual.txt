@@ -1,0 +1,22 @@
+
+1) take pedestals
+init.bat                                (initializing ROI readout mode, 2 channels (0 and 1), 100 samples readout from each channel - this implicates 203 FIFO burst length to be implemented (in registers and in software))
+triggers_off
+drs_enable
+drs_trigger                         (generating one event)
+drs_disable
+
+2) to see calibration sinuous waves
+init.bat                                (initializing ROI readout mode, 2 channels (0 and 1), 100 samples readout from each channel - this implicates 203 FIFO burst length to be implemented (in registers and in software))
+triggers_off
+cal_on
+drs_enable
+drs_trigger                         (generating one event)
+drs_disable
+
+3) to record external signals
+init.bat                                (initializing ROI readout mode, 2 channels (0 and 1), 100 samples readout from each channel - this implicates 203 FIFO burst length to be implemented (in registers and in software))
+!! Hv settings and triggers patterns are to be set but there are not in batch files. One has to play with hv as in Ronny email and triggers are describes in the specification.
+drs_enable
+!! Events should appear
+drs_disable
