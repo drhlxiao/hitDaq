@@ -18,9 +18,11 @@ import pyqtgraph as pg
 from core import window
 from core import daq_comm
 from core import config
+from core import calibration
 
 debug=False
 MAX_LOG_ITEMS=2000
+
 
 class WorkerSignals(QObject):
     '''
@@ -122,6 +124,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             self.readoutConfigButton: self.config_readout_mode,
             self.clearWaveformsButton: self.clear_waveforms,
             self.readStatusButton: self.read_and_show_status,
+            self.hvSetPushButton:self.set_hv
         }
         actions = {self.action_Exit: self.closeEvent,
                    self.actionAbout: self.about,
@@ -131,6 +134,13 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             btn.clicked.connect(fun)
         for action, fun in actions.items():
             action.triggered.connect(fun)
+
+        self.hv1OnPushButton.clicked.connect(lambda:self.power_on_off_hv(1, True))
+        self.hv2OnPushButton.clicked.connect(lambda:self.power_on_off_hv(2, False))
+        self.hv1OffPushButton.clicked.connect(lambda:self.power_on_off_hv(1, True)) 
+        self.hv2OffPushButton.clicked.connect(lambda:self.power_on_off_hv(2, False)) 
+        self.hvChannelSpinBox.valueChanged.connect(self.show_hv_channel)
+        
         self.readoutModeComboBox.currentIndexChanged.connect(self.readout_mode_change)
         self.registerAddressInput.textChanged.connect(self.update_register_info)
         #self.actionLogDock.stateChanged.connect(self.update_logger_state)
@@ -151,6 +161,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
 
     def update_logger_state(self):
         pass
+        
         
     def update_register_info(self):
         addr=self.registerAddressInput.text()
@@ -444,7 +455,11 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             f'Reading register {name} (addr {address})', color='darkYellow')
         value = self.read_register(address)
         if value is not None:
-            self.info(f'{name} raw value {value}', color='darkCyan')
+            try:
+                hexdec=hex(value)
+            except Exception as e:
+                hexdec=str(e)
+            self.info(f'{name} raw value {value} ({hexdec})', color='darkCyan')
 
     def _register_write(self):
         add = self.registerAddressInput.text()
@@ -473,7 +488,13 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         button_groups = {
             0: [self.registerReadButton, self.registerWriteButton, self.executeScriptButton, self.readoutConfigButton,
                 self.drs4SingleShotButton, self.drs4RunButton,  self.readStatusButton,
-
+                self.hv1OnPushButton, 
+                self.hv2OnPushButton, 
+                self.hv1OffPushButton, 
+                self.hv2OffPushButton, 
+                self.hvChannelSpinBox,
+                self.hvSetPushButton,
+                self.hvDoubleSpinBox,
                 ],
             1: []}
         if level >= 0:
@@ -862,5 +883,25 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         def read_reg(reg_add):
             self.info(f'Reading  {hex(reg)} ...')
             result = self.read_register(reg_add)
-            self.info(f'Register {hex(reg)} value: {result}')
+            self.info(f'Register {hex(reg)} value: {result} {hex(result)}')
         self.async_run(read_reg, reg)
+
+    def power_on_off_hv(self, hvch, status):
+        address=0x41 if hvch==1 else 0x42
+        value=0xffff if status else 0x0000
+        value = self.write_register(address, value)
+    def set_hv(self):
+        channel=self.hvChannelSpinBox.value()
+        value=self.hvDoubleSpinBox.value()
+        addr=channel+0x31
+        raw=calibration.convert_HV_real_to_raw(value)
+        value=self.write_register(addr, raw)
+    def show_hv_channel(self):
+        channel=self.hvChannelSpinBox.value()
+        position={5:'Pos 1', 7:'Pos 2', 3:'Pos 3', 2:'Pos 4' }
+        self.hvPosition.setText(position.get(channel, 'Unused'))
+
+    
+
+
+

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1322</width>
+    <width>1286</width>
     <height>950</height>
    </rect>
   </property>
@@ -65,7 +65,7 @@
        <string notr="true">QTabBar::tab { height: 35px; }</string>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <property name="iconSize">
        <size>
@@ -208,7 +208,7 @@
              </font>
             </property>
             <property name="title">
-             <string>Readout</string>
+             <string>Settings</string>
             </property>
             <layout class="QGridLayout" name="gridLayout_4">
              <property name="topMargin">
@@ -217,10 +217,33 @@
              <property name="rightMargin">
               <number>1</number>
              </property>
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_14">
+             <item row="1" column="8">
+              <spacer name="horizontalSpacer_11">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>387</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_18">
                <property name="text">
-                <string>Readout mode:</string>
+                <string/>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLineEdit" name="readoutInput1">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
                </property>
               </widget>
              </item>
@@ -243,7 +266,17 @@
                </item>
               </widget>
              </item>
-             <item row="0" column="2" colspan="6">
+             <item row="1" column="3">
+              <widget class="QLineEdit" name="readoutInput2">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2" colspan="7">
               <spacer name="horizontalSpacer_10">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -256,26 +289,10 @@
                </property>
               </spacer>
              </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="readoutLabel1">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
+             <item row="1" column="7">
+              <widget class="QPushButton" name="readoutConfigButton">
                <property name="text">
-                <string>Readout channels:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QLineEdit" name="readoutInput1">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
+                <string>Set</string>
                </property>
               </widget>
              </item>
@@ -292,8 +309,8 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="3">
-              <widget class="QLineEdit" name="readoutInput2">
+             <item row="1" column="5">
+              <widget class="QLineEdit" name="readoutInput3">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                  <horstretch>0</horstretch>
@@ -315,31 +332,163 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="5">
-              <widget class="QLineEdit" name="readoutInput3">
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_14">
+               <property name="text">
+                <string>Readout mode:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="readoutLabel1">
                <property name="sizePolicy">
-                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
-              </widget>
-             </item>
-             <item row="1" column="6">
-              <widget class="QPushButton" name="readoutConfigButton">
                <property name="text">
-                <string>Set</string>
+                <string>Readout channels:</string>
                </property>
               </widget>
              </item>
-             <item row="1" column="7">
-              <spacer name="horizontalSpacer_11">
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="groupBox_4">
+            <property name="title">
+             <string>HV modules</string>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_5">
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_17">
+               <property name="text">
+                <string>HVPS1:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QPushButton" name="hv1OnPushButton">
+               <property name="text">
+                <string>ON</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QPushButton" name="hv1OffPushButton">
+               <property name="text">
+                <string>OFF</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="3" colspan="2">
+              <widget class="QLabel" name="label_20">
+               <property name="text">
+                <string>HVPS2:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="5">
+              <widget class="QPushButton" name="hv2OnPushButton">
+               <property name="text">
+                <string>ON</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="6" colspan="2">
+              <widget class="QPushButton" name="hv2OffPushButton">
+               <property name="text">
+                <string>OFF</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="8" colspan="2">
+              <spacer name="horizontalSpacer_9">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
-                 <width>387</width>
+                 <width>475</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_19">
+               <property name="text">
+                <string>HV:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QSpinBox" name="hvChannelSpinBox">
+               <property name="toolTip">
+                <string>High voltage channel</string>
+               </property>
+               <property name="suffix">
+                <string/>
+               </property>
+               <property name="prefix">
+                <string>HV ch: </string>
+               </property>
+               <property name="minimum">
+                <number>1</number>
+               </property>
+               <property name="maximum">
+                <number>8</number>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="2" colspan="2">
+              <widget class="QLabel" name="hvPosition">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>40</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>200</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="4" colspan="3">
+              <widget class="QDoubleSpinBox" name="hvDoubleSpinBox">
+               <property name="prefix">
+                <string>HV (V):  </string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="7" colspan="2">
+              <widget class="QPushButton" name="hvSetPushButton">
+               <property name="text">
+                <string>Set</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="9">
+              <spacer name="horizontalSpacer_12">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>669</width>
                  <height>20</height>
                 </size>
                </property>
@@ -1204,8 +1353,8 @@ background-color: rgb(239, 41, 41);</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1322</width>
-     <height>26</height>
+     <width>1286</width>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
