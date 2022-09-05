@@ -459,6 +459,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
                 hexdec=hex(value)
             except Exception as e:
                 hexdec=str(e)
+            self.registerValueInput.setText(hexdec)
             self.info(f'{name} raw value {value} ({hexdec})', color='darkCyan')
 
     def _register_write(self):
