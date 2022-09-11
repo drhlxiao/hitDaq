@@ -354,8 +354,8 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             self.plot_waveform(self.waveform_data)
             self.info('Fifo is empty')
             return 
-        samples = self.fifo_burst_read(self.burst_read_fifo_length)
         i=0
+        samples = self.fifo_burst_read(self.burst_read_fifo_length)
         len_samples=len(samples)
         while i < len_samples:
             timestamp=0
@@ -754,6 +754,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         return self.show_message(msg, where, 'red')
 
     def show_message(self, msg, where=0, color='darkGray', timestamp=True):
+        self.archive_manager.write_log(msg)
         if where != 1:
             self.statusbar.showMessage(msg)
             return 'status', self.statusbar

@@ -10,7 +10,10 @@ class Archive(object):
         self.filename = 'run_1.dat'
         self.fp = None
         self.enabled = False
+        self.log_file=None
+        self.log_filename=None
         self.buffer_size = 4096
+        self.folder='.'
         self.file_size_written = 0
         self.current_buffer_size = 0
         self.max_file_size = 4096*500
@@ -28,7 +31,22 @@ class Archive(object):
         return self.enabled
 
     def close(self):
+        if self.log_file:
+            self.log_file.close()
         self.stop()
+    
+    def write_log(self, line:str):
+        if self.log_file:
+            line= f'[{datetime.now().isoformat()}] {line}\n'
+            self.log_file.write(line)
+        
+
+    def create_log_file(self):
+        now = datetime.now()
+        date_time = now.strftime('%Y%m%d_%H%M')
+        filename = f'daq_{date_time}.log'
+        self.log_filename=os.path.join(self.folder, filename)
+        self.log_file=open(self.log_filename, 'w')
 
     def dump(self, force_dump=False, create_new=True):
         if not self.fp:

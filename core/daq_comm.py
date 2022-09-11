@@ -140,6 +140,7 @@ class DaqComm(object):
         self.telecommand_counter = 0
         self.telemetry_counter = 0
         self.archive_manager = archive.Archive()
+        self.archive_manager.create_log_file()
 
    
     def read_register_burst(self,register, length):
@@ -162,9 +163,12 @@ class DaqComm(object):
     
     def fifo_burst_read(self, length):
         self.write(addr_fifo_burst_length, int(length))
-        ret = self.read_register_burst(addr_fifo_burst, length)
-        print(ret)
-        return ret
+        samples= self.read_register_burst(addr_fifo_burst, length)
+
+        samples = self.fifo_burst_read(self.burst_read_fifo_length)
+        samples_str=' '.join([f'{x:0>4X}' for x in samples])
+        self.archive_manager.append(['burst_read', register, samples_str])
+        return samples
         #for word in range(int(length)):
         #    print("Word %03d = 0x%0*X" %(word, 4, ret[word]))
 
