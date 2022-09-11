@@ -256,11 +256,11 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         self.archiveFolderInput.setText(folder)
 
     def truncate_archiving(self):
-        if self.archiving_enabled:
-            filename = self.archive_manager.truncate()
-            if filename:
-                self.info(f'Archive filename:{filename}')
-                return
+        filename = self.archive_manager.truncate()
+        if filename:
+            self.info(f'Log has been written to filename:{filename}')
+            self.info(f'New log filename:{self.archive_manager.current_filename()}')
+            return
         self.error(f'Archiving was not running.')
 
     def enable_archiving(self):
@@ -347,6 +347,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
                 waveform_data['data'][i+1]=[math.sin(2*j*math.pi/1024+self.debug_waveform_phase) for j in range(1024)]
             self.plot_waveform(waveform_data)
             return
+
         if self.is_fifo_empty() == None:
             self.info('Fifo status unknown!')
             return
@@ -754,7 +755,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         return self.show_message(msg, where, 'red')
 
     def show_message(self, msg, where=0, color='darkGray', timestamp=True):
-        self.archive_manager.write_log(msg)
+        self.archive_manager.write_one(msg)
         if where != 1:
             self.statusbar.showMessage(msg)
             return 'status', self.statusbar

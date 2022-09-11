@@ -140,7 +140,6 @@ class DaqComm(object):
         self.telecommand_counter = 0
         self.telemetry_counter = 0
         self.archive_manager = archive.Archive()
-        self.archive_manager.create_log_file()
 
    
     def read_register_burst(self,register, length):
@@ -164,10 +163,8 @@ class DaqComm(object):
     def fifo_burst_read(self, length):
         self.write(addr_fifo_burst_length, int(length))
         samples= self.read_register_burst(addr_fifo_burst, length)
-
-        samples = self.fifo_burst_read(self.burst_read_fifo_length)
         samples_str=' '.join([f'{x:0>4X}' for x in samples])
-        self.archive_manager.append(['burst_read', register, samples_str])
+        self.archive_manager.write_one(f'burst_read from Register {addr_fifo_burst:0>4x}: {samples_str}')
         return samples
         #for word in range(int(length)):
         #    print("Word %03d = 0x%0*X" %(word, 4, ret[word]))
@@ -197,7 +194,9 @@ class DaqComm(object):
             return True
         except Exception as e:
             self.error(str(e))
+
         return False
+
 
     def close_all(self):
         if self.s:
@@ -218,7 +217,7 @@ class DaqComm(object):
                 amount_received += 1
             value = int.from_bytes(
                 data[4], byteorder='big') * 256 + int.from_bytes(data[5], byteorder='big')
-            self.archive_manager.append(['read', register, value])
+            self.archive_manager.write_one(f'Read from Register  {register:0>4x}: {value:0>4x}')
             return value
         except Exception as e:
             self.error(str(e))
@@ -246,7 +245,7 @@ class DaqComm(object):
             for word in range(burst_length):
                 value.append(int.from_bytes(
                     data[4+(word*2)], byteorder='big') * 256 + int.from_bytes(data[5+(word*2)], byteorder='big'))
-            self.archive_manager.append(['burst_read', register, value])
+            self.archive_manager.write_one(f'burst_read from Register {register:0>4x}: {value:0>4x}')
             #print(value)
             return value
         except Exception as e:
@@ -353,7 +352,7 @@ class DaqComm(object):
         c = (value & 0xFF00) >> 8
         d = (value & 0x00FF)
         message = [a, b, c, d, 0xFF, 0xFF]
-        self.archive_manager.append(['write', register, value])
+        self.archive_manager.write_one(f'write Register {register:0>4X}: {value:0>4X}')
         try:
             self.s.sendall(bytes(message))
             amount_received = 0
