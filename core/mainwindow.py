@@ -99,6 +99,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.on_timeout)
         self.timer.start(1000)
+        
 
 
         self.update_readout_widgets(1)
@@ -140,6 +141,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         self.hv1OffPushButton.clicked.connect(lambda:self.power_on_off_hv(1, True)) 
         self.hv2OffPushButton.clicked.connect(lambda:self.power_on_off_hv(2, False)) 
         self.hvChannelSpinBox.valueChanged.connect(self.show_hv_channel)
+        self.copyLogButton.clicked.connect(self.copy_log)
         
         self.readoutModeComboBox.currentIndexChanged.connect(self.readout_mode_change)
         self.registerAddressInput.textChanged.connect(self.update_register_info)
@@ -904,6 +906,12 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         position={5:'Pos 1', 7:'Pos 2', 3:'Pos 3', 2:'Pos 4' }
         self.hvPosition.setText(position.get(channel, 'Unused'))
 
+    def copy_log(self):
+        text =  '\n'.join([str(self.listWidget.item(i).text()) for i in range(self.listWidget.count())])
+        cb = QtWidgets.QApplication.clipboard()
+        cb.clear(mode=cb.Clipboard )
+        cb.setText(text, mode=cb.Clipboard) 
+        self.statusbar.showMessage('The log has been copied to the clipboard')
     
 
 
