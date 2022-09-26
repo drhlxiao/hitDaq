@@ -137,8 +137,8 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
             action.triggered.connect(fun)
 
         self.hv1OnPushButton.clicked.connect(lambda:self.power_on_off_hv(1, True))
-        self.hv2OnPushButton.clicked.connect(lambda:self.power_on_off_hv(2, False))
-        self.hv1OffPushButton.clicked.connect(lambda:self.power_on_off_hv(1, True)) 
+        self.hv2OnPushButton.clicked.connect(lambda:self.power_on_off_hv(2, True))
+        self.hv1OffPushButton.clicked.connect(lambda:self.power_on_off_hv(1, False)) 
         self.hv2OffPushButton.clicked.connect(lambda:self.power_on_off_hv(2, False)) 
         self.hvChannelSpinBox.valueChanged.connect(self.show_hv_channel)
         self.copyLogButton.clicked.connect(self.copy_log)
@@ -266,6 +266,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         self.error(f'Archiving was not running.')
 
     def enable_archiving(self):
+        self.info('Archiving button clicked')
         inputs = (self.archiveFolderInput, self.archiveFilenamePrefixInput,
                   self.archiveBufferSizeInput, self.archiveFilesizeMaxInput)
         self.settings.setValue('archive', [self.archiveFolderInput.text(),

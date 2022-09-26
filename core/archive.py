@@ -44,8 +44,8 @@ class Archive(object):
         line = datetime.now().isoformat() +','+ stream if with_time else stream
         try:
             self.fp.write(f'{line}\n')
-        except IOError:
-            self.erro('Error. Trying to write closed file')
+        except (IOError, ValueError):
+            print('Error. Trying to write closed file')
 
 
     def current_filename(self):
