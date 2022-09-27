@@ -10,11 +10,10 @@ sudo apt install python3-pip
 ```
 On windows
 
-  - Download  python3.8.5 (other versions >= 3.6 should also work) executable installer
+  - Download  python3.10  executable installer
  
-     64-bit Windows: https://www.python.org/ftp/python/3.8.5/python-3.8.5-amd64.exe 
-   
-     32-bit Windows: https://www.python.org/ftp/python/3.8.5/python-3.8.5.exe 
+     64-bit Windows installer: https://www.python.org/ftp/python/3.10.7/python-3.10.7-amd64.exe   
+	 32-bit Windows installer: https://www.python.org/ftp/python/3.10.7/python-3.10.7.exe
  
   - Install python3
  
