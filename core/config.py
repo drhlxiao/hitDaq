@@ -3,8 +3,8 @@
 '''
  configuration file
 '''
-release_date = 'Nov. 14, 2020'
-version = 'v1.3'
+release_date = 'Sept. 27, 2022'
+version = 'v2.0'
 
 commands = {
         'basicOperationGroup':
