@@ -344,13 +344,6 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         self.info('Waveform updated')
 
     def drs4_single_read_and_plot(self):
-        if debug:
-            for i in range(9):
-                self.debug_waveform_phase+=i*math.pi/20
-                waveform_data['data'][i+1]=[math.sin(2*j*math.pi/1024+self.debug_waveform_phase) for j in range(1024)]
-            self.plot_waveform(waveform_data)
-            return
-
         if self.is_fifo_empty() == None:
             self.info('Fifo status unknown!')
             return
@@ -361,10 +354,13 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         i=0
         samples = self.fifo_burst_read(self.burst_read_fifo_length)
         len_samples=len(samples)
+        self.waveform_data['data']={}
+
         while i < len_samples:
             timestamp=0
             sample=samples[i]
             if sample==0xFFFF:
+                #timestamp
                 self.plot_waveform(self.waveform_data)
                 self.waveform_data['data']={}
                 self.channel_id=0
@@ -373,6 +369,7 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
                     self.channel_id=samples[i+3]&0x000F
                     i=i+3
             elif sample >>4 == 0xfff:
+                #a new channel
                 self.channel_id=sample&0x000F
                 self.plot_waveform(self.waveform_data)
             else:

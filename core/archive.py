@@ -93,4 +93,6 @@ class Archive(object):
             self.fp = open(self.filename, 'a')
             return self.filename
         except Exception as e:
+            print(str(e))
+            print(f"Failed to create file {self.filename}")
             return None
