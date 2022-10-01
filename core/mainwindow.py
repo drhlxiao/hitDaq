@@ -21,7 +21,7 @@ from core import config
 from core import calibration
 
 debug=False
-MAX_LOG_ITEMS=2000
+MAX_LOG_ITEMS=5000
 
 
 class WorkerSignals(QObject):
@@ -331,6 +331,8 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
         self.plt.showAxis('top')
         self.plt.showAxis('right')
     def clear_waveforms(self):
+        
+        self.waveform_data['data']={}
         for index in self.plots:
             value=[0]
             self.plots[index].setData(value)
@@ -346,9 +348,11 @@ class Ui(window.Ui_MainWindow, daq_comm.DaqComm):
     def drs4_single_read_and_plot(self):
         if self.is_fifo_empty() == None:
             self.info('Fifo status unknown!')
+            self.clear_waveforms()
             return
         if self.is_fifo_empty() == True:
-            self.plot_waveform(self.waveform_data)
+            #self.plot_waveform(self.waveform_data)
+            self.clear_waveforms()
             self.info('Fifo is empty')
             return 
         i=0
